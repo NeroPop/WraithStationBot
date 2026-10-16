@@ -38,6 +38,14 @@ Add or remove names in the `Name` column. The bot picks up changes within 5 minu
 The bot fills in `Last Said` itself. Do not type in that column.
 Each name has its own 30 minute cooldown (change `COOLDOWN_MINUTES` in `triggers/sillystaff.js`).
 
+### Feature suggestions
+
+`/feature` saves what someone types as a new row in the `Suggestions` tab of the suggestions spreadsheet:
+`Date`, `Suggested By` (Discord username), `Suggestion` and `Server`. If the tab is empty, the bot writes
+those headings itself. Suggestions are saved as plain text, so they can never run as spreadsheet formulas.
+
+### Sharing
+
 Every spreadsheet must be shared (as Editor) with the service account's email address.
 Sheet IDs are not secret, so they are listed in `config.js` (`sheetIds`). To add a new spreadsheet for a
 future feature, share it with the service account and add a line to `config.js`.
