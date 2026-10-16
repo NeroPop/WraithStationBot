@@ -12,6 +12,7 @@
 //   GOOGLE_SERVICE_ACCOUNT_EMAIL   the "client_email" value from the Google JSON key file
 //   GOOGLE_PRIVATE_KEY             the "private_key" value from the Google JSON key file
 
+const { createPrivateKey } = require('node:crypto'); // used to test that the private key is readable
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 const { JWT } = require('google-auth-library');
 
@@ -19,23 +20,39 @@ const { JWT } = require('google-auth-library');
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 
 // Tidies up the private key so it works however it was pasted into the Environment tab.
-// Google's key file has the line breaks written as the two characters \n. Some
-// tools turn those into real line breaks and some keep them, so we handle both.
+//
+// Google's key file writes the line breaks as the two characters \n. Depending on how
+// the key was pasted, it may arrive with real line breaks, with \n, with doubled \\n,
+// or with stray quote marks, commas or spaces around it. Instead of guessing which,
+// this pulls out only the part between the BEGIN and END lines, throws away everything
+// that is not allowed in a key, and rebuilds it in the exact shape Google's tools expect.
 function normalizePrivateKey(rawKey) {
-  const key = String(rawKey)
-    .trim()
-    .replace(/^["']|["']$/g, '') // remove quote marks around the whole key
-    .replace(/\\n/g, '\n'); // turn the two characters \n into a real line break
-
-  // A quick sanity check. We never print the key itself, only whether it looks right.
-  if (!key.includes('-----BEGIN PRIVATE KEY-----') || !key.includes('-----END PRIVATE KEY-----')) {
+  // Find the part between the BEGIN and END lines.
+  const found = String(rawKey).match(/-----BEGIN PRIVATE KEY-----([\s\S]*?)-----END PRIVATE KEY-----/);
+  if (!found) {
     throw new Error(
-      'GOOGLE_PRIVATE_KEY does not look like a private key. It should start with ' +
-        '"-----BEGIN PRIVATE KEY-----" and end with "-----END PRIVATE KEY-----".'
+      'GOOGLE_PRIVATE_KEY does not look like a private key. It should contain ' +
+        '"-----BEGIN PRIVATE KEY-----" and "-----END PRIVATE KEY-----".'
     );
   }
 
-  return key;
+  // Inside, a key only ever contains letters, numbers, + / and =.
+  // First remove every \n marker (one or more backslashes followed by n), then
+  // remove anything else that does not belong (spaces, quotes, commas, real line breaks).
+  const body = found[1].replace(/\\+n/g, '').replace(/[^A-Za-z0-9+/=]/g, '');
+
+  // A whole key has a length that divides by 4 (and is about 1600 characters long).
+  // If not, part of it went missing when it was copied. We say how long it is, but never
+  // print the key itself.
+  if (body.length === 0 || body.length % 4 !== 0) {
+    throw new Error(
+      `GOOGLE_PRIVATE_KEY looks cut off or damaged (its middle part is ${body.length} characters, ` +
+        'and a whole key has about 1600). Copy it again from the Google JSON file.'
+    );
+  }
+
+  // Rebuild it with a line break every 64 characters, which is the standard layout.
+  return `-----BEGIN PRIVATE KEY-----\n${body.match(/.{1,64}/g).join('\n')}\n-----END PRIVATE KEY-----\n`;
 }
 
 // The robot account's sign-in. It is the same for every spreadsheet, so we make it once.
@@ -54,8 +71,21 @@ function getAuth() {
       throw new Error(`Google Sheets is not set up. Missing in the Environment tab: ${missing.join(', ')}`);
     }
 
+    const key = normalizePrivateKey(rawKey);
+
+    // Test the key right now, on this computer, before involving Google. If it cannot be
+    // read, we say so clearly instead of showing a confusing "DECODER" error later.
+    try {
+      createPrivateKey(key);
+    } catch (error) {
+      throw new Error(
+        'GOOGLE_PRIVATE_KEY has the right start and end but the middle part is damaged, so it ' +
+          'cannot be read. Copy it again from the "private_key" line of the Google JSON file.'
+      );
+    }
+
     // JWT is the "robot account" sign-in: the service account's email plus its private key.
-    auth = new JWT({ email: email.trim(), key: normalizePrivateKey(rawKey), scopes: SCOPES });
+    auth = new JWT({ email: email.trim(), key, scopes: SCOPES });
   }
 
   return auth;
