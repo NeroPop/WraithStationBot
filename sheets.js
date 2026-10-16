@@ -6,6 +6,7 @@
 //   const { sheetIds } = require('./config');
 //   const { getSheet } = require('./sheets');
 //   const sheet = await getSheet(sheetIds.staffList, 'Staff');   // the tab called "Staff"
+//   await appendRow(sheetIds.suggestions, 'Suggestions', { ... }); // add a row at the bottom
 //
 // The sheet IDs are listed in config.js. Signing in needs two secret settings,
 // which you add in the Wispbyte Environment tab:
@@ -133,10 +134,82 @@ async function getSheet(spreadsheetId, tabName) {
   return sheet;
 }
 
+// ---- Adding rows ---------------------------------------------------------
+// Google Sheets can turn a block of cells into a "table" (Format > Convert to table).
+// A table only grows if rows are added in a table-aware way. The simple "add a row at
+// the bottom" method does NOT know about tables, so the new row would land just below
+// the table instead of inside it. appendRow() below handles both cases.
+
+// Looks for a table on the given tab that has every column we want to fill in.
+// Returns the table's details, or null if the tab has no suitable table.
+async function findTable(spreadsheetId, sheet, headings) {
+  // Ask Google for a short summary of the spreadsheet: just each tab's ID and its tables.
+  // ("fields" limits the answer to the bits we need.)
+  const response = await getAuth().request({
+    url: `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}`,
+    params: { fields: 'sheets(properties(sheetId),tables(tableId,columnProperties(columnIndex,columnName)))' },
+  });
+
+  const thisTab = (response.data.sheets ?? []).find((tab) => tab.properties.sheetId === sheet.sheetId);
+
+  // Pick the first table that contains a column for every heading we are writing.
+  return (
+    (thisTab?.tables ?? []).find((table) => {
+      const columnNames = (table.columnProperties ?? []).map((column) => column.columnName);
+      return headings.every((heading) => columnNames.includes(heading));
+    }) ?? null
+  );
+}
+
+// Adds one row INSIDE a table, so the table grows to include it.
+// Any table columns we have no value for (such as extra tick boxes you added) are left empty.
+async function appendToTable(spreadsheetId, table, valuesByHeading) {
+  // Put the values in the table's column order.
+  const columns = [...table.columnProperties].sort((a, b) => a.columnIndex - b.columnIndex);
+
+  // stringValue saves the text exactly as typed. It is never treated as a formula.
+  // An empty cell ({}) is left blank.
+  const cells = columns.map((column) => {
+    const value = valuesByHeading[column.columnName];
+    return value === undefined || value === '' ? {} : { userEnteredValue: { stringValue: String(value) } };
+  });
+
+  await getAuth().request({
+    url: `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}:batchUpdate`,
+    method: 'POST',
+    data: {
+      requests: [
+        {
+          // appendCells with a tableId adds the row to the end of that table's body.
+          // "fields" says we only set values, so any dropdowns or tick boxes stay as they are.
+          appendCells: { tableId: table.tableId, rows: [{ values: cells }], fields: 'userEnteredValue' },
+        },
+      ],
+    },
+  });
+}
+
+// Adds one new row to the bottom of a tab. Pass the values keyed by column heading:
+//   await appendRow(sheetIds.suggestions, 'Suggestions', { Date: '...', Suggestion: '...' });
+// If the tab contains a Google Sheets table, the row goes inside it (and the table grows).
+// Otherwise it is added under the data like normal. Text is always saved exactly as typed,
+// never as a formula.
+async function appendRow(spreadsheetId, tabName, valuesByHeading) {
+  const sheet = await getSheet(spreadsheetId, tabName);
+
+  const table = await findTable(spreadsheetId, sheet, Object.keys(valuesByHeading));
+  if (table) {
+    await appendToTable(spreadsheetId, table, valuesByHeading);
+    return;
+  }
+
+  await sheet.addRow(valuesByHeading, { raw: true }); // raw: save the text exactly as written
+}
+
 // Used when the bot starts, to prove a connection works. Returns the spreadsheet's title.
 async function checkConnection(spreadsheetId) {
   const doc = await getDoc(spreadsheetId);
   return doc.title;
 }
 
-module.exports = { getSheet, checkConnection, normalizePrivateKey };
+module.exports = { getSheet, appendRow, checkConnection, normalizePrivateKey };

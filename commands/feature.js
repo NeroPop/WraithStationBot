@@ -10,9 +10,11 @@
 // - The text is saved exactly as typed. It is never treated as a spreadsheet formula,
 //   so something like =IMPORTXML(...) just shows up as text.
 // - If the sheet is completely empty, the bot adds the column headings itself.
+// - If the tab is formatted as a Google Sheets table, new rows are added inside the table.
+// - Extra columns you add yourself (such as "Wraith Approved?") are left alone and empty.
 
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
-const { getSheet } = require('../sheets');
+const { getSheet, appendRow } = require('../sheets');
 const { sheetIds } = require('../config'); // the suggestions spreadsheet ID lives in config.js
 
 // ---- Settings you might want to change -----------------------------------
@@ -78,16 +80,15 @@ module.exports = {
     await ensureHeadings(sheet);
 
     // Add one new row at the bottom. The names on the left are the column headings.
-    // raw: true saves the text exactly as typed, so it can never run as a formula.
-    await sheet.addRow(
-      {
-        Date: new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC', // 2026-10-16 20:15 UTC
-        'Suggested By': interaction.user.username,
-        Suggestion: suggestion,
-        Server: interaction.guild?.name ?? 'Direct message',
-      },
-      { raw: true }
-    );
+    // appendRow() puts the row inside the Google Sheets table if the tab has one (so the
+    // table grows), and saves the text exactly as typed so it can never run as a formula.
+    // Columns we do not mention here (like "Wraith Approved?") are left empty.
+    await appendRow(sheetIds.suggestions, SHEET_TAB, {
+      Date: new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC', // 2026-10-16 20:15 UTC
+      'Suggested By': interaction.user.username,
+      Suggestion: suggestion,
+      Server: interaction.guild?.name ?? 'Direct message',
+    });
 
     await interaction.editReply('Thanks! Your suggestion has been saved.');
   },

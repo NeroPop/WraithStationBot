@@ -44,6 +44,10 @@ Each name has its own 30 minute cooldown (change `COOLDOWN_MINUTES` in `triggers
 `Date`, `Suggested By` (Discord username), `Suggestion` and `Server`. If the tab is empty, the bot writes
 those headings itself. Suggestions are saved as plain text, so they can never run as spreadsheet formulas.
 
+The tab can be formatted as a Google Sheets table (Format > Convert to table). The bot adds each new row
+inside the table so it grows. Extra columns you add (such as "Wraith Approved?" and "Implemented?") are left
+empty by the bot. Keep the four column headings above spelled exactly as they are.
+
 ### Sharing
 
 Every spreadsheet must be shared (as Editor) with the service account's email address.
