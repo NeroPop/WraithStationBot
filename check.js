@@ -5,8 +5,9 @@
 //     npm run check
 //
 // It does NOT connect to Discord and does NOT need your token. It only makes sure
-// that every file in "commands" and "triggers" is written correctly, and that
-// each trigger pattern passes its own example tests. If anything is wrong it
+// that every file in "commands", "triggers" and "stims" is written correctly, that
+// each trigger pattern passes its own example tests, that every stim always produces
+// sensible text, and that the stim settings in config.js make sense. If anything is wrong it
 // explains what and exits with an error, so you can fix it before the bot restarts.
 
 const { loadCommands, loadTriggers } = require('./loadFiles');
@@ -57,6 +58,40 @@ try {
 } catch (error) {
   problems++;
   console.error(`FAIL  triggers: ${error.message}`);
+}
+
+// ---- Check the stims and their settings ----------------------------------
+try {
+  const { readSettings, toSmallText, stims } = require('./stimScheduler'); // loads the stims folder too
+
+  readSettings(); // throws a clear error if something in config.js is wrong
+  console.log('OK  config   stim settings in config.js');
+
+  if (stims.length === 0) throw new Error('the stims folder has no stims in it.');
+
+  for (const stim of stims) {
+    // A stim is different each time, so we try it many times.
+    for (let attempt = 0; attempt < 200; attempt++) {
+      const text = stim.generate();
+
+      if (typeof text !== 'string' || text.trim() === '') {
+        throw new Error(`stims/${stim.name}.js: generate() must return some text, but it returned ${JSON.stringify(text)}.`);
+      }
+
+      if (toSmallText(text).length > 2000) {
+        throw new Error(`stims/${stim.name}.js: the text is longer than Discord's 2000 character limit.`);
+      }
+
+      if (stim.pattern && !stim.pattern.test(text)) {
+        throw new Error(`stims/${stim.name}.js: the text "${text}" does not match its own pattern.`);
+      }
+    }
+
+    console.log(`OK  stim     ${stim.name}   (for example: ${toSmallText(stim.generate())})`);
+  }
+} catch (error) {
+  problems++;
+  console.error(`FAIL  stims: ${error.message}`);
 }
 
 // ---- Report --------------------------------------------------------------

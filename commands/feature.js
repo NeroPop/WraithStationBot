@@ -14,7 +14,7 @@
 // - Extra columns you add yourself (such as "Wraith Approved?") are left alone and empty.
 
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
-const { getSheet, appendRow } = require('../sheets');
+const { getSheet, ensureHeadings, appendRow } = require('../sheets');
 const { sheetIds } = require('../config'); // the suggestions spreadsheet ID lives in config.js
 
 // ---- Settings you might want to change -----------------------------------
@@ -22,36 +22,6 @@ const SHEET_TAB = 'Suggestions'; // the name of the tab at the bottom of the spr
 
 // The column headings, in order. The bot uses these exact names to place each value.
 const HEADINGS = ['Date', 'Suggested By', 'Suggestion', 'Server'];
-
-// Remembers whether we have already checked the headings since the bot started,
-// so we only do that check once instead of on every suggestion.
-let headingsChecked = false;
-
-// Makes sure row 1 of the sheet has the headings we need.
-//   - If row 1 is completely empty, we write the headings in.
-//   - If row 1 already has headings, we check that ours are all there.
-async function ensureHeadings(sheet) {
-  if (headingsChecked) return;
-
-  // Read the first four cells of row 1. An empty row comes back as nothing at all.
-  const firstRow = (await sheet.getCellsInRange('A1:D1'))?.[0] ?? [];
-  const rowIsEmpty = firstRow.every((cell) => String(cell ?? '').trim() === '');
-
-  if (rowIsEmpty) {
-    await sheet.setHeaderRow(HEADINGS); // write the headings into row 1
-  } else {
-    await sheet.loadHeaderRow(); // read the headings that are already there
-  }
-
-  // Make sure every heading we need exists, with a clear message if one does not.
-  for (const heading of HEADINGS) {
-    if (!sheet.headerValues.includes(heading)) {
-      throw new Error(`The "${SHEET_TAB}" tab needs a column headed "${heading}" in row 1.`);
-    }
-  }
-
-  headingsChecked = true;
-}
 
 module.exports = {
   // "data" is what Discord shows in its command menu.
@@ -77,7 +47,7 @@ module.exports = {
     const suggestion = interaction.options.getString('suggestion', true).trim();
 
     const sheet = await getSheet(sheetIds.suggestions, SHEET_TAB);
-    await ensureHeadings(sheet);
+    await ensureHeadings(sheet, HEADINGS); // writes the headings if the tab is empty
 
     // Add one new row at the bottom. The names on the left are the column headings.
     // appendRow() puts the row inside the Google Sheets table if the tab has one (so the

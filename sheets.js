@@ -6,6 +6,7 @@
 //   const { sheetIds } = require('./config');
 //   const { getSheet } = require('./sheets');
 //   const sheet = await getSheet(sheetIds.staffList, 'Staff');   // the tab called "Staff"
+//   await ensureHeadings(sheet, ['Date', 'Suggestion']);          // write or check the headings
 //   await appendRow(sheetIds.suggestions, 'Suggestions', { ... }); // add a row at the bottom
 //
 // The sheet IDs are listed in config.js. Signing in needs two secret settings,
@@ -134,6 +135,42 @@ async function getSheet(spreadsheetId, tabName) {
   return sheet;
 }
 
+// ---- Column headings -----------------------------------------------------
+// Turns a column number into its letter (1 is A, 2 is B, and so on up to Z).
+function columnLetter(number) {
+  return String.fromCharCode(64 + number);
+}
+
+// The tabs we have already checked since the bot started, so we check each only once.
+const checkedSheets = new WeakSet();
+
+// Makes sure row 1 of a tab has the column headings we need:
+//   - If row 1 is completely empty, the headings are written in for you.
+//   - If row 1 already has headings, we check that ours are all there.
+// "headings" is a list like ['Date', 'Suggested By', 'Suggestion', 'Server'].
+async function ensureHeadings(sheet, headings) {
+  if (checkedSheets.has(sheet)) return;
+
+  // Read the part of row 1 where our headings go. An empty row comes back as nothing at all.
+  const firstRow = (await sheet.getCellsInRange(`A1:${columnLetter(headings.length)}1`))?.[0] ?? [];
+  const rowIsEmpty = firstRow.every((cell) => String(cell ?? '').trim() === '');
+
+  if (rowIsEmpty) {
+    await sheet.setHeaderRow(headings); // write the headings into row 1
+  } else {
+    await sheet.loadHeaderRow(); // read the headings that are already there
+  }
+
+  // Make sure every heading we need exists, with a clear message if one does not.
+  for (const heading of headings) {
+    if (!sheet.headerValues.includes(heading)) {
+      throw new Error(`The "${sheet.title}" tab needs a column headed "${heading}" in row 1.`);
+    }
+  }
+
+  checkedSheets.add(sheet);
+}
+
 // ---- Adding rows ---------------------------------------------------------
 // Google Sheets can turn a block of cells into a "table" (Format > Convert to table).
 // A table only grows if rows are added in a table-aware way. The simple "add a row at
@@ -212,4 +249,4 @@ async function checkConnection(spreadsheetId) {
   return doc.title;
 }
 
-module.exports = { getSheet, appendRow, checkConnection, normalizePrivateKey };
+module.exports = { getSheet, ensureHeadings, appendRow, checkConnection, normalizePrivateKey };

@@ -14,6 +14,7 @@ const { Client, Events, GatewayIntentBits, MessageFlags } = require('discord.js'
 const { loadCommands, loadTriggers } = require('./loadFiles');
 const { checkConnection } = require('./sheets');
 const { sheetIds } = require('./config');
+const { startStimScheduler } = require('./stimScheduler');
 
 // ---- 1. Read the secret token --------------------------------------------
 // Wispbyte's Environment tab saves variables into a file called ".env".
@@ -75,6 +76,14 @@ client.once(Events.ClientReady, async (readyClient) => {
     } catch (error) {
       console.warn(`Google Sheet "${label}" is not available: ${error.message}`);
     }
+  }
+
+  // Start the random stims. They only ever post in channels set up with /stim.
+  try {
+    const count = await startStimScheduler(readyClient);
+    console.log(`Stim scheduler is running (${count} channel(s) set up).`);
+  } catch (error) {
+    console.warn(`Stim scheduler could not start: ${error.message}`);
   }
 });
 

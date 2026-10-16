@@ -9,6 +9,9 @@ JesterStation, a Discord bot for Wraithstation. Mostly party tricks.
 | `index.js` | Starts the bot. Wispbyte runs this file. |
 | `commands/` | One file per slash command. The file name is the command name (`ping.js` is `/ping`). |
 | `triggers/` | One file per chat trigger (the bot reacting to words in normal messages). |
+| `stims/` | One file per random stim (a phrase the bot says on its own). See "Random stims" below. |
+| `stimScheduler.js` | Decides when each channel stims, and says them. |
+| `timeUtils.js`, `random.js` | Small helpers for times, time zones and random numbers. |
 | `loadFiles.js` | Reads the two folders above and checks the files are written correctly. |
 | `check.js` | Safety check, run with `npm run check`. Needs no token. |
 | `config.js` | Non-secret settings, such as the Google Sheet IDs. Safe to put on GitHub. |
@@ -47,6 +50,22 @@ those headings itself. Suggestions are saved as plain text, so they can never ru
 The tab can be formatted as a Google Sheets table (Format > Convert to table). The bot adds each new row
 inside the table so it grows. Extra columns you add (such as "Wraith Approved?" and "Implemented?") are left
 empty by the bot. Keep the four column headings above spelled exactly as they are.
+
+### Random stims
+
+The bot randomly says short phrases ("stims") in small text, but only in channels set up with `/stim`.
+
+- **The stims** are the files in `stims/`. Each exports `generate()`, which returns the text. To add one, copy a
+  file in that folder. Nobody can add stims through Discord.
+- **A session** picks one stim at random and says it 1 to 5 times, 30 minutes to 2 hours apart. Those numbers are in
+  `config.js` under `stims`. If the next repeat would fall outside the active hours, the session ends early.
+- **`/stim set from:10 until:22 min:12h max:3d`** (optional `timezone:`, default `Europe/London`) starts stims in the
+  current channel. `min` and `max` are the wait between sessions (use `m`, `h` or `d`). Running it again in the same
+  channel overwrites the old settings. `/stim off` stops it and `/stim status` shows the settings.
+  Only people with the Manage Channels permission can use `/stim`.
+- **The `Stims` tab** of the stims spreadsheet stores each channel's settings and schedule, so a restart carries on
+  where it left off. The bot writes the headings itself. You can edit the hours and gaps there by hand (changes are
+  picked up within 5 minutes), and set `Status` to `Active` to turn a paused channel back on.
 
 ### Sharing
 

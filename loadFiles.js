@@ -1,6 +1,6 @@
 // loadFiles.js
 //
-// This file reads the "commands" and "triggers" folders and hands back everything
+// This file reads the "commands", "triggers" and "stims" folders and hands back everything
 // it finds. Both index.js (the real bot) and check.js (the safety check) use it,
 // so the rules for what makes a valid command or trigger live in ONE place.
 //
@@ -84,4 +84,30 @@ function loadTriggers() {
   return triggers;
 }
 
-module.exports = { loadCommands, loadTriggers };
+// Loads every stim from the "stims" folder.
+//
+// Each stim file must export:
+//   generate -> a function that returns the text to say (called every time it is said)
+//   pattern  -> (optional) a regular expression the text must match, used by check.js
+function loadStims() {
+  const stims = [];
+
+  for (const { fileName, filePath } of getJsFiles('stims')) {
+    const stim = require(filePath);
+
+    if (typeof stim.generate !== 'function') {
+      throw new Error(`stims/${fileName}.js must export a "generate" function that returns the text to say.`);
+    }
+
+    if (stim.pattern !== undefined && !(stim.pattern instanceof RegExp)) {
+      throw new Error(`stims/${fileName}.js: "pattern" must be a regular expression.`);
+    }
+
+    // Keep the file name on the stim. It is how the bot remembers which stim it is saying.
+    stims.push({ ...stim, name: fileName });
+  }
+
+  return stims;
+}
+
+module.exports = { loadCommands, loadTriggers, loadStims };
