@@ -23,7 +23,11 @@ try {
   if (error.code !== 'ENOENT') throw error; // ENOENT only means "no .env file"
 }
 
-if (!process.env.DISCORD_TOKEN) {
+// Tidy up the token: copy and paste often adds invisible spaces or line breaks
+// at the ends, and some tools wrap the value in quote marks. Remove both.
+const token = (process.env.DISCORD_TOKEN || '').trim().replace(/^["']|["']$/g, '').trim();
+
+if (!token) {
   console.error('No DISCORD_TOKEN found. Add it in the Environment tab on Wispbyte.');
   process.exit(1);
 }
@@ -117,4 +121,20 @@ client.on(Events.Error, (error) => console.error('Discord client error:', error)
 process.on('unhandledRejection', (error) => console.error('Unhandled rejection:', error));
 
 // ---- 6. Log in -----------------------------------------------------------
-client.login(process.env.DISCORD_TOKEN);
+client.login(token).catch((error) => {
+  console.error(`Could not log in to Discord: ${error.message}`);
+
+  // Help with the most common problem without ever printing the token itself.
+  // A real bot token is about 72 characters long and has 3 parts joined by dots.
+  console.error(
+    `The saved token is ${token.length} characters long and has ${token.split('.').length} part(s). ` +
+      'A real bot token has 3 parts. If that does not match, copy the token again from the ' +
+      'Bot page in the Discord Developer Portal (use Reset Token if needed) and save it in the ' +
+      'Environment tab on Wispbyte.'
+  );
+
+  // Close the connection properly, then exit with an error code.
+  // (Exiting instantly while it is still closing can crash on Windows.)
+  client.destroy();
+  process.exitCode = 1;
+});
