@@ -1,0 +1,17 @@
+{
+  "name": "wraithstation-bot",
+  "version": "1.0.0",
+  "description": "JesterStation, a Discord bot for party tricks.",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "start": "node index.js",
+    "check": "node --check index.js && node check.js"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "dependencies": {
+    "discord.js": "^14.27.0"
+  }
+}
