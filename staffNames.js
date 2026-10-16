@@ -26,4 +26,5 @@ module.exports = [
   'Caity',
   'Panda',
   'Seren',
+  'jester',
 ];
