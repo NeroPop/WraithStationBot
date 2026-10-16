@@ -1,0 +1,8 @@
+# Secrets. The bot token lives in this file, so it must NEVER be committed.
+.env
+
+# Packages. Wispbyte runs "npm install" itself, so these do not belong on GitHub.
+node_modules/
+
+# Log files.
+*.log
