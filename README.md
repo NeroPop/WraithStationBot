@@ -57,8 +57,10 @@ The bot randomly says short phrases ("stims") in small text, but only in channel
 
 - **The stims** are the files in `stims/`. Each exports `generate()`, which returns the text. To add one, copy a
   file in that folder. Nobody can add stims through Discord.
-- **A session** picks one stim at random and says it 1 to 5 times, 30 minutes to 2 hours apart. Those numbers are in
-  `config.js` under `stims`. If the next repeat would fall outside the active hours, the session ends early.
+- **A session** picks one stim at random and says it 1 to 5 times, a short wait apart. Those numbers (the number of
+  repeats and the wait between them) are in `config.js` under `stims`. If the next repeat would fall outside the active hours, the session ends early.
+  A channel's repeats are never spaced further apart than its own `/stim` max wait (for example, a channel with
+  `max:10m` repeats every 10 minutes or less, even if `config.js` allows up to 30 minutes).
 - **`/stim set from:10 until:22 min:12h max:3d`** (optional `timezone:`, default `Europe/London`) starts stims in the
   current channel. `min` and `max` are the wait between sessions (use `m`, `h` or `d`). Running it again in the same
   channel overwrites the old settings. `/stim off` stops it and `/stim status` shows the settings.

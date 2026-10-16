@@ -25,6 +25,8 @@ module.exports = {
     repeatsPerSession: { min: 1, max: 5 },
 
     // The wait between repeats inside one session (a random time from min to max).
+    // For a channel whose /stim "max" is shorter than this max, that channel's max is used
+    // instead (and the min is lowered to match if needed).
     repeatGap: { min: '1m', max: '30m' },
 
     // When a session starts at the opening time (for example 10:00), the bot waits a

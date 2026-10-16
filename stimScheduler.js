@@ -7,7 +7,8 @@
 //
 // HOW A SESSION WORKS
 //   - The bot picks ONE stim at random (never the same one as the last session).
-//   - It says that stim 1 to 5 times, waiting 30 minutes to 2 hours between each.
+//   - It says that stim 1 to 5 times, waiting a short random time between each
+//     (never longer than the channel's own max wait between sessions).
 //   - If the next repeat would land outside the active hours, the session ends early
 //     and a new one starts when the active hours next open (plus a little random delay).
 //   - After a normal session, the next one starts somewhere between the channel's
@@ -177,9 +178,20 @@ function planNextSession(state, now) {
   state.nextRunMs = shiftIntoWindow(state, now + randomBetween(state.minGapMs, state.maxGapMs));
 }
 
+// The wait between repeats for one channel. Normally this is the repeatGap from config.js,
+// but it is never allowed to be longer than the channel's own "max" wait between sessions
+// (set with /stim set). That way repeats always come at least as often as new sessions.
+//   Example: config says 1m to 30m, but the channel's max is 10m, so repeats are 1m to 10m.
+function repeatGapFor(state) {
+  const maxMs = Math.min(SETTINGS.repeatGapMaxMs, state.maxGapMs);
+  const minMs = Math.min(SETTINGS.repeatGapMinMs, maxMs); // the minimum is lowered too if needed
+  return { minMs, maxMs };
+}
+
 // A stim was just said and there are repeats left: plan the next repeat.
 function planNextRepeat(state, now) {
-  const candidate = now + randomBetween(SETTINGS.repeatGapMinMs, SETTINGS.repeatGapMaxMs);
+  const gap = repeatGapFor(state);
+  const candidate = now + randomBetween(gap.minMs, gap.maxMs);
 
   if (isWithinActive(candidate, state.activeFrom, state.activeUntil, state.timezone)) {
     state.nextRunMs = candidate;
