@@ -8,7 +8,7 @@
 const { randomInt } = require('../random');
 
 const MIN_REPEATS = 1; // every letter appears at least this many times
-const MAX_REPEATS = 6; // and at most this many times
+const MAX_REPEATS = 8; // and at most this many times
 
 module.exports = {
   generate() {
