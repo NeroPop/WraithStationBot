@@ -11,6 +11,7 @@ JesterStation, a Discord bot for Wraithstation. Mostly party tricks.
 | `triggers/` | One file per chat trigger (the bot reacting to words in normal messages). |
 | `loadFiles.js` | Reads the two folders above and checks the files are written correctly. |
 | `check.js` | Safety check, run with `npm run check`. Needs no token. |
+| `staffNames.js` | The list of staff names the "silly [name]" trigger reacts to. Easy to edit. |
 | `.env` | Holds `DISCORD_TOKEN`. Set in the Wispbyte Environment tab. Never committed. |
 
 ## Adding a slash command
@@ -26,6 +27,12 @@ JesterStation, a Discord bot for Wraithstation. Mostly party tricks.
 1. Copy `triggers/whattime.js` and rename it.
 2. Change the `pattern` (the words to react to) and what `execute()` does.
 3. Run `npm run check`, push, and restart the server.
+
+## Editing the staff name list
+
+Open `staffNames.js`, add or remove a line (name in quote marks, then a comma), then push and restart.
+The "silly [name]" trigger only reacts to names in that list. Each name has its own 30 minute cooldown
+(change `COOLDOWN_MINUTES` in `triggers/sillystaff.js`). Cooldowns reset whenever the bot restarts.
 
 ## Wispbyte setup
 
