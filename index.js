@@ -133,6 +133,17 @@ client.login(token).catch((error) => {
       'Environment tab on Wispbyte.'
   );
 
+  // The first part of a bot token is the bot's ID, encoded. That ID is public
+  // (it is the Application ID in the Developer Portal), so it is safe to print.
+  // If it matches your Application ID, the token is for the right bot but has
+  // probably been reset since you copied it. If it does not match, it is the wrong bot.
+  const botId = Buffer.from(token.split('.')[0], 'base64').toString();
+  if (/^\d+$/.test(botId)) {
+    console.error(`This token belongs to the bot with ID ${botId}. Compare it with the Application ID in the Developer Portal.`);
+  } else {
+    console.error('The start of this token does not look like a bot ID, so it is probably not a bot token.');
+  }
+
   // Close the connection properly, then exit with an error code.
   // (Exiting instantly while it is still closing can crash on Windows.)
   client.destroy();
