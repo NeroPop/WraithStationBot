@@ -16,14 +16,14 @@
 //   - Keep each name inside quote marks, and do not forget the comma at the end of the line.
 
 module.exports = [
-  'Steve'
-  'Nero'
-  'Wraith'
-  'Rin'
-  'Leone'
-  'Bex'
-  'Yerio'
-  'Caity'
-  'Panda'
+  'Steve',
+  'Nero',
+  'Wraith',
+  'Rin',
+  'Leone',
+  'Bex',
+  'Yerio',
+  'Caity',
+  'Panda',
   'Seren',
 ];
