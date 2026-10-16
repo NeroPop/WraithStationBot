@@ -53,7 +53,7 @@ module.exports = {
     // reply() makes a Discord reply to their message.
     // repliedUser: false means the person is NOT pinged by the reply.
     await message.reply({
-      content: 'For all they do is divine and holy!',
+      content: 'for all they do is divine and holy!',
       allowedMentions: { repliedUser: false },
     });
   },
