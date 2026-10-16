@@ -1,6 +1,12 @@
 # Secrets. The bot token lives in this file, so it must NEVER be committed.
 .env
 
+# Google credentials. This key gives access to the bot's Google account, so it must
+# NEVER be committed. These patterns cover the usual file names.
+google-credentials.json
+*credentials*.json
+*service-account*.json
+
 # Packages. Wispbyte runs "npm install" itself, so these do not belong on GitHub.
 node_modules/
 

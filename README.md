@@ -11,7 +11,8 @@ JesterStation, a Discord bot for Wraithstation. Mostly party tricks.
 | `triggers/` | One file per chat trigger (the bot reacting to words in normal messages). |
 | `loadFiles.js` | Reads the two folders above and checks the files are written correctly. |
 | `check.js` | Safety check, run with `npm run check`. Needs no token. |
-| `staffNames.js` | The list of staff names the "silly [name]" trigger reacts to. Easy to edit. |
+| `config.js` | Non-secret settings, such as the Google Sheet IDs. Safe to put on GitHub. |
+| `sheets.js` | Signs in to Google Sheets. Triggers and commands use it to read and write the spreadsheet. |
 | `.env` | Holds `DISCORD_TOKEN`. Set in the Wispbyte Environment tab. Never committed. |
 
 ## Adding a slash command
@@ -28,11 +29,25 @@ JesterStation, a Discord bot for Wraithstation. Mostly party tricks.
 2. Change the `pattern` (the words to react to) and what `execute()` does.
 3. Run `npm run check`, push, and restart the server.
 
-## Editing the staff name list
+## Google Sheets
 
-Open `staffNames.js`, add or remove a line (name in quote marks, then a comma), then push and restart.
-The "silly [name]" trigger only reacts to names in that list. Each name has its own 30 minute cooldown
-(change `COOLDOWN_MINUTES` in `triggers/sillystaff.js`). Cooldowns reset whenever the bot restarts.
+The "silly [name]" trigger reads its staff list from a Google Sheet and saves its cooldown times there.
+
+The spreadsheet needs a tab called `Staff` with two headings in row 1: `Name` and `Last Said`.
+Add or remove names in the `Name` column. The bot picks up changes within 5 minutes.
+The bot fills in `Last Said` itself. Do not type in that column.
+Each name has its own 30 minute cooldown (change `COOLDOWN_MINUTES` in `triggers/sillystaff.js`).
+
+Every spreadsheet must be shared (as Editor) with the service account's email address.
+Sheet IDs are not secret, so they are listed in `config.js` (`sheetIds`). To add a new spreadsheet for a
+future feature, share it with the service account and add a line to `config.js`.
+
+Environment variables to set in the Wispbyte Environment tab (these ARE secret):
+
+| Variable | What it is |
+|---|---|
+| `GOOGLE_SERVICE_ACCOUNT_EMAIL` | The `client_email` value from the Google JSON key file |
+| `GOOGLE_PRIVATE_KEY` | The `private_key` value from the Google JSON key file |
 
 ## Wispbyte setup
 

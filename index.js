@@ -12,6 +12,8 @@
 const path = require('node:path');
 const { Client, Events, GatewayIntentBits, MessageFlags } = require('discord.js');
 const { loadCommands, loadTriggers } = require('./loadFiles');
+const { checkConnection } = require('./sheets');
+const { sheetIds } = require('./config');
 
 // ---- 1. Read the secret token --------------------------------------------
 // Wispbyte's Environment tab saves variables into a file called ".env".
@@ -61,6 +63,18 @@ client.once(Events.ClientReady, async (readyClient) => {
     console.log(`Registered ${commandData.length} slash command(s).`);
   } catch (error) {
     console.error('Could not register slash commands:', error);
+  }
+
+  // Check every Google Sheet listed in config.js, so any problem shows up in the console
+  // straight away instead of the first time someone uses a feature that needs it.
+  // The rest of the bot keeps working even if this fails.
+  for (const [label, spreadsheetId] of Object.entries(sheetIds)) {
+    try {
+      const title = await checkConnection(spreadsheetId);
+      console.log(`Connected to Google Sheet "${title}" (${label}).`);
+    } catch (error) {
+      console.warn(`Google Sheet "${label}" is not available: ${error.message}`);
+    }
   }
 });
 
