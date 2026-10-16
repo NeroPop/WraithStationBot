@@ -17,5 +17,13 @@
 
 module.exports = [
   'Steve'
-  'Nero', 
+  'Nero'
+  'Wraith'
+  'Rin'
+  'Leone'
+  'Bex'
+  'Yerio'
+  'Caity'
+  'Panda'
+  'Seren',
 ];
