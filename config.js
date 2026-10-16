@@ -25,7 +25,7 @@ module.exports = {
     repeatsPerSession: { min: 1, max: 5 },
 
     // The wait between repeats inside one session (a random time from min to max).
-    repeatGap: { min: '30m', max: '2h' },
+    repeatGap: { min: '1m', max: '30m' },
 
     // When a session starts at the opening time (for example 10:00), the bot waits a
     // random extra amount up to this long, so it is not exactly on the dot. Use '0m' for none.
