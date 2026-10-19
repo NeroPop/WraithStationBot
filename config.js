@@ -69,7 +69,7 @@ module.exports = {
     alwaysAllowedUserIds: ['150931226767785985'],
 
     // After an alarm is set, nobody can set another one for this long (shared by everyone).
-    cooldown: '1h',
+    cooldown: '5m',
 
     // How far ahead an alarm can be set.
     maxAhead: '7d',
