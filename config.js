@@ -13,7 +13,7 @@ module.exports = {
     staffList: '15ZoVXK1YLt-gTEl6zN6V5MlGc0ANxjf76Tt0lZM0hP4', // the "silly [name]" staff list
     suggestions: '1I5r0n5g4e-aa7sU8iMAKDQ1348p7an0eJ-gdpGj0AYY', // feature suggestions from /feature
     stims: '1zX-fG0ad6DKou_3uOTeUshrcVDDa0Xi4GqBQ8xZyqPA', // which channels stim, and their schedules
-    teaAlarm: '1gk5Ulsny8FplDDz-ARED0VrTzE9st6lPCa6BGlgcBMA', // the tea alarms that have been set
+    teaAlarm: '1MS8Ur9FetvM0Ipz1UQccW1Kuj04KQJcLt8pcVBGF4Hg', // the tea alarms that have been set
   },
 
   // Settings for the random stims (see the stims folder and /stim).
