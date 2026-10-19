@@ -94,6 +94,28 @@ try {
   console.error(`FAIL  stims: ${error.message}`);
 }
 
+// ---- Check the tea alarm settings and pictures ---------------------------
+try {
+  const fs = require('node:fs');
+  const { readSettings, settings } = require('./teaAlarm');
+
+  readSettings(); // throws a clear error if something in config.js is wrong
+  console.log('OK  config   tea alarm settings in config.js');
+
+  // Pictures are optional, so a missing folder is a reminder and not a failure.
+  const pictures = fs.existsSync(settings.imagesFolder)
+    ? fs.readdirSync(settings.imagesFolder).filter((name) => /\.(png|jpe?g|gif|webp)$/i.test(name))
+    : [];
+  console.log(
+    pictures.length > 0
+      ? `OK  pictures ${pictures.length} tea picture(s) in ${settings.imagesFolder}`
+      : `NOTE  no tea pictures yet. Put .png, .jpg, .gif or .webp files in the images/tea folder.`
+  );
+} catch (error) {
+  problems++;
+  console.error(`FAIL  tea alarm: ${error.message}`);
+}
+
 // ---- Report --------------------------------------------------------------
 if (problems > 0) {
   console.error(`\nCheck failed with ${problems} problem(s). Fix them before pushing.`);

@@ -15,6 +15,7 @@ const { loadCommands, loadTriggers } = require('./loadFiles');
 const { checkConnection } = require('./sheets');
 const { sheetIds } = require('./config');
 const { startStimScheduler } = require('./stimScheduler');
+const { startTeaAlarms } = require('./teaAlarm');
 
 // ---- 1. Read the secret token --------------------------------------------
 // Wispbyte's Environment tab saves variables into a file called ".env".
@@ -84,6 +85,14 @@ client.once(Events.ClientReady, async (readyClient) => {
     console.log(`Stim scheduler is running (${count} channel(s) set up).`);
   } catch (error) {
     console.warn(`Stim scheduler could not start: ${error.message}`);
+  }
+
+  // Start the tea alarms, so alarms set before a restart still go off.
+  try {
+    const waiting = await startTeaAlarms(readyClient);
+    console.log(`Tea alarms are running (${waiting} waiting).`);
+  } catch (error) {
+    console.warn(`Tea alarms could not start: ${error.message}`);
   }
 });
 

@@ -32,6 +32,7 @@ const {
   nextOpening,
 } = require('./timeUtils');
 const { randomInt, randomBetween, pickRandom } = require('./random');
+const { createQueue } = require('./taskQueue');
 
 // ---- Settings (read from config.js) --------------------------------------
 // Turns the friendly text in config.js ("30m", "2h") into numbers the code can use.
@@ -149,12 +150,7 @@ const warned = new Set(); // problems we have already told the console about
 
 // Only one thing may change the schedule at a time (a check, or a /stim command). This
 // queues them up so they never trip over each other.
-let queue = Promise.resolve();
-function runExclusive(task) {
-  const result = queue.then(task);
-  queue = result.catch(() => {}); // a failure must not block the queue for the next task
-  return result;
-}
+const runExclusive = createQueue();
 
 // ---- Planning times ------------------------------------------------------
 

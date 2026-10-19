@@ -13,6 +13,7 @@ module.exports = {
     staffList: '15ZoVXK1YLt-gTEl6zN6V5MlGc0ANxjf76Tt0lZM0hP4', // the "silly [name]" staff list
     suggestions: '1I5r0n5g4e-aa7sU8iMAKDQ1348p7an0eJ-gdpGj0AYY', // feature suggestions from /feature
     stims: '1zX-fG0ad6DKou_3uOTeUshrcVDDa0Xi4GqBQ8xZyqPA', // which channels stim, and their schedules
+    teaAlarm: '1gk5Ulsny8FplDDz-ARED0VrTzE9st6lPCa6BGlgcBMA', // the tea alarms that have been set
   },
 
   // Settings for the random stims (see the stims folder and /stim).
@@ -51,5 +52,45 @@ module.exports = {
 
     // If a stim fails to send (for example Discord had a hiccup), try again after this long.
     retryAfterError: '5m',
+  },
+
+  // Settings for the tea alarm (see the /tea command).
+  teaAlarm: {
+    sheetTab: 'TeaAlarm', // the name of the tab that holds the alarms
+
+    // The person who gets pinged when an alarm goes off (their Discord user ID).
+    pingUserId: '150931226767785985',
+
+    // Anyone with one of these roles can use /tea. To allow another role, add its ID to the list
+    // (in Discord: Server Settings > Roles > right-click the role > Copy Role ID).
+    allowedRoleIds: ['1514769056635289741'],
+
+    // These people can always use /tea, whatever roles they have (Discord user IDs).
+    alwaysAllowedUserIds: ['150931226767785985'],
+
+    // After an alarm is set, nobody can set another one for this long (shared by everyone).
+    cooldown: '1h',
+
+    // How far ahead an alarm can be set.
+    maxAhead: '7d',
+
+    // If the bot was offline when an alarm was due, it still sends it if it is at most this late.
+    // After that the alarm is marked "Missed" and nothing is sent.
+    lateGrace: '15m',
+
+    // Clock times like 15:30 are read in this time zone (the time zone of the person being pinged).
+    timezone: 'Europe/London',
+
+    // The folder of pictures. The bot picks one at random for each alarm.
+    imagesFolder: 'images/tea',
+
+    // How often the bot checks whether an alarm is due, in seconds.
+    checkEverySeconds: 15,
+
+    // How often the bot re-reads the TeaAlarm sheet, to pick up edits made by hand.
+    sheetRefresh: '5m',
+
+    // If an alarm fails to send (for example Discord had a hiccup), try again after this long.
+    retryAfterError: '2m',
   },
 };

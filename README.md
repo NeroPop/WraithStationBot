@@ -11,7 +11,9 @@ JesterStation, a Discord bot for Wraithstation. Mostly party tricks.
 | `triggers/` | One file per chat trigger (the bot reacting to words in normal messages). |
 | `stims/` | One file per random stim (a phrase the bot says on its own). See "Random stims" below. |
 | `stimScheduler.js` | Decides when each channel stims, and says them. |
-| `timeUtils.js`, `random.js` | Small helpers for times, time zones and random numbers. |
+| `teaAlarm.js` | Saves, schedules and sends the tea alarms. |
+| `images/tea/` | Pictures for the tea alarm. The bot picks one at random. |
+| `timeUtils.js`, `random.js`, `taskQueue.js` | Small helpers for times, time zones, random numbers and running one task at a time. |
 | `loadFiles.js` | Reads the two folders above and checks the files are written correctly. |
 | `check.js` | Safety check, run with `npm run check`. Needs no token. |
 | `config.js` | Non-secret settings, such as the Google Sheet IDs. Safe to put on GitHub. |
@@ -68,6 +70,21 @@ The bot randomly says short phrases ("stims") in small text, but only in channel
 - **The `Stims` tab** of the stims spreadsheet stores each channel's settings and schedule, so a restart carries on
   where it left off. The bot writes the headings itself. You can edit the hours and gaps there by hand (changes are
   picked up within 5 minutes), and set `Status` to `Active` to turn a paused channel back on.
+
+### Tea alarm
+
+`/tea set time:15:30` (or `time:20m`) pings one person (set in `config.js`) in that channel at that time, with a
+"Tea Alarm!" embed and a random picture from `images/tea/`.
+
+- Clock times are read in UK time (`teaAlarm.timezone` in `config.js`). Waits use `m`, `h` or `d`.
+- Only people with a role listed in `teaAlarm.allowedRoleIds` can use it (and the people in `alwaysAllowedUserIds`).
+  To allow another role, add its ID to that list.
+- Only one alarm can be set per hour, shared by everyone (`teaAlarm.cooldown`). Cancelling does not reset it.
+- Alarms can be set up to 7 days ahead (`maxAhead`). If the bot was offline when one was due, it still sends it if
+  it is at most 15 minutes late (`lateGrace`), otherwise the alarm is marked `Missed`.
+- `/tea cancel` cancels the waiting alarms in the channel and `/tea status` lists them.
+- Alarms are saved in the `TeaAlarm` tab (the bot writes the headings itself), so a restart loses nothing.
+- Pictures need the **Attach Files** permission. Without it, the alarm is sent without a picture.
 
 ### Sharing
 
