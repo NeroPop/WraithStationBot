@@ -8,9 +8,9 @@
 const { randomInt } = require('../random');
 
 const MIN_AYS = 2; // fewest "ay"s
-const MAX_AYS = 10; // most "ay"s
+const MAX_AYS = 12; // most "ay"s
 const MIN_FACES = 1; // fewest sad faces
-const MAX_FACES = 6; // most sad faces
+const MAX_FACES = 7; // most sad faces
 
 module.exports = {
   generate() {
