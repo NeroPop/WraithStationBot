@@ -142,7 +142,7 @@ module.exports = {
       const { alarm } = result;
       await publicly(
         interaction,
-        `☕ <@${interaction.user.id}> set a tea alarm for ${alarmTime(alarm.alarmMs, alarm.setAtMs)} (${stamp(alarm.alarmMs, 'R')}). It was set at ${stamp(alarm.setAtMs, 't')}.`
+        `☕ <@${interaction.user.id}> set a tea alarm for ${alarmTime(alarm.alarmMs, alarm.setAtMs)} (${stamp(alarm.alarmMs, 'R')}).`
       );
 
       // Tell the person privately if pictures will not work in this channel.
