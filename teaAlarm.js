@@ -292,7 +292,7 @@ function pickImage() {
 // an embed would not notify them) and shows the embed below it.
 function buildAlarmMessage(alarm, image) {
   const embed = new EmbedBuilder()
-    .setColor(0xb5651d) // tea brown
+    .setColor(0xfee75c) // yellow (Discord's own yellow). Change this to change the stripe colour.
     .setTitle('☕ Tea Alarm!')
     .setDescription('Go put the kettle on.')
     .setFooter({ text: `Set by ${alarm.setBy}` });
