@@ -70,7 +70,7 @@ module.exports = {
 
     // After an alarm is set, nobody can set another one for this long (shared by everyone).
     // Using /tea cancel on a waiting alarm resets this, so a wrong time can be fixed straight away.
-    cooldown: '5m',
+    cooldown: '1h',
 
     // How far ahead an alarm can be set.
     maxAhead: '7d',
