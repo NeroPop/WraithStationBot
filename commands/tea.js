@@ -10,10 +10,11 @@
 //
 // Only people with an allowed role can use it (the roles are listed in config.js).
 // Only one alarm can be set per hour (the cooldown is also in config.js), shared by everyone.
+// Cancelling an alarm resets that limit, so a wrong time can be fixed straight away.
 
 const { SlashCommandBuilder, InteractionContextType, MessageFlags, PermissionFlagsBits } = require('discord.js');
 const tea = require('../teaAlarm');
-const { formatDuration } = require('../timeUtils');
+const { formatDuration, formatClock } = require('../timeUtils');
 
 const { settings } = tea;
 
@@ -32,9 +33,18 @@ function stamp(ms, style) {
   return `<t:${Math.floor(ms / 1000)}:${style}>`;
 }
 
-// For an alarm that is soon, the time is enough. For one further away, also show the date.
+// What to call the time zone of the clock times in the messages.
+const ZONE_LABEL = settings.timezone === 'Europe/London' ? 'UK time' : settings.timezone;
+
+// Shows an alarm's time two ways, so everyone can read it easily:
+//   **15:30 UK time**    always a 24 hour clock, so there is never any am/pm confusion
+//   (3:30 PM for you)    Discord's timestamp, shown in each reader's own time zone
+// For an alarm that is soon, the time is enough. For one further away, the date is shown too.
 function alarmTime(alarmMs, now = Date.now()) {
-  return alarmMs - now < 20 * 60 * 60 * 1000 ? stamp(alarmMs, 't') : stamp(alarmMs, 'f');
+  const far = alarmMs - now >= 20 * 60 * 60 * 1000;
+  const fixed = formatClock(alarmMs, settings.timezone, far);
+  const local = stamp(alarmMs, far ? 'f' : 't');
+  return `**${fixed} ${ZONE_LABEL}** (${local} for you)`;
 }
 
 // The IDs of the roles the person has. Discord gives these in two possible shapes.
@@ -142,7 +152,7 @@ module.exports = {
       const { alarm } = result;
       await publicly(
         interaction,
-        `☕ <@${interaction.user.id}> set a tea alarm for ${alarmTime(alarm.alarmMs, alarm.setAtMs)} (${stamp(alarm.alarmMs, 'R')}).`
+        `☕ <@${interaction.user.id}> set a tea alarm for ${alarmTime(alarm.alarmMs, alarm.setAtMs)}, ${stamp(alarm.alarmMs, 'R')}.`
       );
 
       // Tell the person privately if pictures will not work in this channel.
@@ -165,7 +175,7 @@ module.exports = {
 
       const times = cancelled.map((alarm) => alarmTime(alarm.alarmMs)).join(', ');
       await publicly(interaction, `☕ <@${interaction.user.id}> cancelled the tea alarm for ${times}.`);
-      await privately(interaction, `Cancelled. Note that cancelling does not reset the ${formatDuration(settings.cooldownMs)} limit.`);
+      await privately(interaction, `Cancelled. The ${formatDuration(settings.cooldownMs)} limit has been reset, so you can set a new alarm straight away.`);
       return;
     }
 

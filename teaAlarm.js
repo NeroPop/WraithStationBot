@@ -10,7 +10,8 @@
 //   - When the time comes, the bot posts in the same channel: it pings the person from
 //     config.js and shows an embed ("Tea Alarm!") with a random picture from the images folder.
 //   - Only ONE alarm can be set per cooldown period (1 hour by default), shared by everyone.
-//     The cooldown counts from when an alarm is SET, and cancelling does not reset it.
+//     The cooldown counts from when an alarm is SET. Cancelling an alarm resets the cooldown,
+//     so a wrong time can be fixed straight away.
 //   - If the bot was offline when an alarm was due, it still sends it if it is only a little
 //     late (15 minutes by default). Otherwise the alarm is marked "Missed" and nothing is sent.
 //
@@ -132,6 +133,19 @@ function parseAlarmTime(text, now = Date.now()) {
   return { atMs };
 }
 
+// ---- The cooldown --------------------------------------------------------
+
+// Works out when the cooldown started: the time the most recent alarm was set, ignoring
+// cancelled alarms. That is why cancelling resets the cooldown: the cancelled alarm stops
+// counting, so a wrong time can be fixed straight away. (An alarm that was already sent,
+// or missed, still counts, so cancelling when nothing is waiting changes nothing.)
+function updateCooldownStart() {
+  lastSetAtMs = 0;
+  for (const alarm of alarms.values()) {
+    if (alarm.status !== 'cancelled') lastSetAtMs = Math.max(lastSetAtMs, alarm.setAtMs);
+  }
+}
+
 // ---- Reading and writing the sheet ---------------------------------------
 
 // Opens the TeaAlarm tab, writing the headings first if the tab is empty.
@@ -196,7 +210,6 @@ async function loadAlarms() {
   const rows = await sheet.getRows();
 
   const loaded = new Map();
-  let newest = 0;
   const toSave = [];
 
   for (const row of rows) {
@@ -213,12 +226,11 @@ async function loadAlarms() {
       }
     }
 
-    newest = Math.max(newest, fresh.setAtMs);
     loaded.set(fresh.id, fresh);
   }
 
   alarms = loaded;
-  lastSetAtMs = Math.max(lastSetAtMs, newest);
+  updateCooldownStart();
   everLoaded = true;
 
   for (const alarm of toSave) await saveStatus(alarm);
@@ -457,13 +469,14 @@ function setAlarm(details) {
     await appendRow(sheetIds.teaAlarm, SETTINGS.sheetTab, alarmToValues(alarm));
 
     alarms.set(alarm.id, alarm);
-    lastSetAtMs = now; // the cooldown starts now
+    updateCooldownStart(); // the cooldown starts now
     return { ok: true, alarm };
   });
 }
 
 // Cancels every waiting alarm in a channel. Returns the alarms that were cancelled.
-// The cooldown is NOT reset, so cancelling cannot be used to get around the limit.
+// A cancelled alarm stops counting towards the cooldown, so after cancelling, a new
+// alarm can be set straight away (this lets a wrong time be fixed easily).
 function cancelAlarms(channelId) {
   return runExclusive(async () => {
     await ensureLoaded();
@@ -475,6 +488,7 @@ function cancelAlarms(channelId) {
       await saveStatus(alarm);
     }
 
+    updateCooldownStart();
     return cancelled;
   });
 }
