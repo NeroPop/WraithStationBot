@@ -81,8 +81,7 @@ The bot randomly says short phrases ("stims") in small text, but only in channel
   To allow another role, add its ID to that list.
 - Only one alarm can be set per hour, shared by everyone (`teaAlarm.cooldown`). Cancelling a waiting alarm resets
   the limit, so a wrong time can be fixed straight away.
-- Times in the messages show as a fixed 24 hour UK time (like **15:30 UK time**) plus Discord's own timestamp,
-  which shows in each reader's own time zone.
+- Times in the messages use Discord's own timestamp, so each person sees them in their own time zone.
 - Alarms can be set up to 7 days ahead (`maxAhead`). If the bot was offline when one was due, it still sends it if
   it is at most 15 minutes late (`lateGrace`), otherwise the alarm is marked `Missed`.
 - `/tea cancel` cancels the waiting alarms in the channel and `/tea status` lists them.

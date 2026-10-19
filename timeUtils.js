@@ -123,16 +123,6 @@ function localMinutes(ms, timeZone) {
   return hours * 60 + minutes;
 }
 
-// Writes a moment as a 24 hour clock time in a time zone, like "15:30".
-// With withDate set it also shows the day, like "Mon 26 Oct, 15:30".
-// (Discord's own timestamps switch between 12 and 24 hour depending on each person's
-// language setting, so this gives a time that always reads the same way.)
-function formatClock(ms, timeZone, withDate = false) {
-  const options = { timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' };
-  if (withDate) Object.assign(options, { weekday: 'short', day: 'numeric', month: 'short' });
-  return new Intl.DateTimeFormat('en-GB', options).format(new Date(ms));
-}
-
 // ---- Active hours --------------------------------------------------------
 // "Active hours" are a daily window, such as 10:00 to 22:00. The start is included and
 // the end is not. A window can cross midnight (22:00 to 02:00). If the start and end are
@@ -185,7 +175,6 @@ module.exports = {
   formatTimeOfDay,
   resolveTimeZone,
   localMinutes,
-  formatClock,
   isWithinActive,
   windowMinutes,
   nextOpening,
