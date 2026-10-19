@@ -305,8 +305,8 @@ function pickImage() {
 function buildAlarmMessage(alarm, image) {
   const embed = new EmbedBuilder()
     .setColor(0xfee75c) // yellow (Discord's own yellow). Change this to change the stripe colour.
-    .setTitle('☕ Tea Alarm!')
-    .setDescription('Go put the kettle on.')
+      .setTitle('☕ Tea Alarm! ☕')
+    .setDescription('Go put the kettle on!')
     .setFooter({ text: `Set by ${alarm.setBy}` });
 
   const message = {
