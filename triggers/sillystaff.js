@@ -29,7 +29,7 @@ const { sheetIds } = require('../config'); // the staff list's spreadsheet ID li
 const SHEET_TAB = 'Staff'; // the name of the tab at the bottom of the spreadsheet
 const NAME_HEADING = 'Name'; // the heading of the column holding the staff names
 const TIME_HEADING = 'Last Said'; // the heading of the column the bot writes times into
-const COOLDOWN_MINUTES = 30; // how long before the same name can be said again
+const COOLDOWN_MINUTES = 20; // how long before the same name can be said again
 const LIST_REFRESH_MINUTES = 5; // how often the bot re-reads the sheet
 
 const COOLDOWN_MS = COOLDOWN_MINUTES * 60 * 1000; // the same times in milliseconds
