@@ -1,7 +1,7 @@
 // config.js
 //
 // Settings that are NOT secret and may be shared on GitHub.
-// (Secrets like the bot token and Google key stay in the Wispbyte Environment tab.)
+// (Secrets like the bot token and Google key stay in the .env file on the server.)
 
 module.exports = {
   // The Google Sheets the bot uses. To add a new one for a future feature:

@@ -7,7 +7,7 @@
 //
 // The staff list comes from the "Staff" tab of the staff spreadsheet, and this trigger keeps
 // its cooldown times in that tab's "Last Silly" column. The shared code that does the work
-// (reading the sheet, the cooldowns) is in staffTrigger.js, which also explains the rules.
+// (reading the sheet, the cooldowns) is in lib/staffTrigger.js, which also explains the rules.
 //
 // - Each name has its own cooldown. After the bot says "Silly Steve", it will not say it
 //   again for that name until the cooldown is over, but "Silly Nero" is still allowed.
@@ -15,7 +15,7 @@
 // To change the cooldown, edit COOLDOWN_MINUTES below.
 // To change the names, just edit the spreadsheet. Changes are picked up within 5 minutes.
 
-const { createStaffTrigger } = require('../staffTrigger');
+const { createStaffTrigger } = require('../lib/staffTrigger');
 
 // ---- Settings you might want to change -----------------------------------
 const COOLDOWN_MINUTES = 20; // how long before the same name can be said again

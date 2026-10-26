@@ -7,7 +7,7 @@
 //   1. Copy it and rename it.
 //   2. Change the pattern to the words you want to react to.
 //   3. Change what happens inside execute().
-//   4. Push to GitHub and restart the server on Wispbyte.
+//   4. Push to GitHub and restart the bot's server.
 
 module.exports = {
   // The pattern the bot looks for in every message.

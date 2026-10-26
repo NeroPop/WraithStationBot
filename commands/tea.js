@@ -16,8 +16,8 @@
 // Cancelling an alarm resets that limit, so a wrong time can be fixed straight away.
 
 const { SlashCommandBuilder, InteractionContextType, MessageFlags, PermissionFlagsBits } = require('discord.js');
-const tea = require('../teaAlarm');
-const { formatDuration } = require('../timeUtils');
+const tea = require('../services/teaAlarm');
+const { formatDuration } = require('../lib/timeUtils');
 
 const { settings } = tea;
 

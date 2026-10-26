@@ -1,6 +1,6 @@
 // index.js
 //
-// The main file. Wispbyte runs this file to start the bot.
+// The main file. Your hosting runs this file to start the bot (the startup file is index.js).
 //
 // What it does, in order:
 //   1. Reads the secret token from the .env file.
@@ -11,14 +11,14 @@
 
 const path = require('node:path');
 const { Client, Events, GatewayIntentBits, MessageFlags } = require('discord.js');
-const { loadCommands, loadTriggers } = require('./loadFiles');
-const { checkConnection } = require('./sheets');
+const { loadCommands, loadTriggers } = require('./lib/loadFiles');
+const { checkConnection } = require('./lib/sheets');
 const { sheetIds } = require('./config');
-const { startStimScheduler } = require('./stimScheduler');
-const { startTeaAlarms } = require('./teaAlarm');
+const { startStimScheduler } = require('./services/stimScheduler');
+const { startTeaAlarms } = require('./services/teaAlarm');
 
 // ---- 1. Read the secret token --------------------------------------------
-// Wispbyte's Environment tab saves variables into a file called ".env".
+// Secrets are kept in a file called ".env" in this folder (see the README). It is never uploaded to GitHub.
 // This loads that file so the token becomes available as process.env.DISCORD_TOKEN.
 // If there is no .env file we carry on, because the token may be set another way.
 try {
@@ -32,7 +32,7 @@ try {
 const token = (process.env.DISCORD_TOKEN || '').trim().replace(/^["']|["']$/g, '').trim();
 
 if (!token) {
-  console.error('No DISCORD_TOKEN found. Add it in the Environment tab on Wispbyte.');
+  console.error('No DISCORD_TOKEN found. Add it to the .env file (see the README).');
   process.exit(1);
 }
 
@@ -162,7 +162,7 @@ client.login(token).catch((error) => {
     `The saved token is ${token.length} characters long and has ${token.split('.').length} part(s). ` +
       'A real bot token has 3 parts. If that does not match, copy the token again from the ' +
       'Bot page in the Discord Developer Portal (use Reset Token if needed) and save it in the ' +
-      'Environment tab on Wispbyte.'
+      '.env file.'
   );
 
   // The first part of a bot token is the bot's ID, encoded. That ID is public

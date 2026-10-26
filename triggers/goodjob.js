@@ -9,14 +9,14 @@
 // It works exactly like the "silly" trigger. The staff list comes from the "Staff" tab of the
 // staff spreadsheet, and this trigger keeps its OWN cooldown times in a separate column,
 // "Last Good Job", so it never interferes with the silly trigger's cooldown.
-// The shared code that does the work is in staffTrigger.js, which also explains the rules.
+// The shared code that does the work is in lib/staffTrigger.js, which also explains the rules.
 //
 // IMPORTANT: the Staff tab needs a column headed "Last Good Job" in row 1 (next to "Last Silly").
 //
 // To change the cooldown or the last word, edit the settings below.
 // To change the names, just edit the spreadsheet. Changes are picked up within 5 minutes.
 
-const { createStaffTrigger } = require('../staffTrigger');
+const { createStaffTrigger } = require('../lib/staffTrigger');
 
 // ---- Settings you might want to change -----------------------------------
 const COOLDOWN_MINUTES = 20; // how long before the same name can get a "good job" again

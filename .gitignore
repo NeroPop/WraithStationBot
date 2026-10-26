@@ -7,7 +7,7 @@ google-credentials.json
 *credentials*.json
 *service-account*.json
 
-# Packages. Wispbyte runs "npm install" itself, so these do not belong on GitHub.
+# Packages. The hosting runs "npm install" itself, so these do not belong on GitHub.
 node_modules/
 
 # Log files.

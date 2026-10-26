@@ -1,4 +1,4 @@
-// teaAlarm.js
+// services/teaAlarm.js
 //
 // The brain behind the tea alarm. It does three jobs:
 //   1. Remembers every alarm (kept in the "TeaAlarm" Google Sheet, so a restart loses nothing).
@@ -20,12 +20,16 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { EmbedBuilder, AttachmentBuilder } = require('discord.js');
-const { getSheet, ensureHeadings, appendRow } = require('./sheets');
-const { sheetIds, teaAlarm: teaConfig } = require('./config');
-const { MINUTE, HOUR, parseDuration, resolveTimeZone } = require('./timeUtils');
-const { parseWhen } = require('./parseWhen');
-const { pickRandom, randomInt } = require('./random');
-const { createQueue } = require('./taskQueue');
+const { getSheet, ensureHeadings, appendRow } = require('../lib/sheets');
+const { sheetIds, teaAlarm: teaConfig } = require('../config');
+const { MINUTE, HOUR, parseDuration, resolveTimeZone } = require('../lib/timeUtils');
+const { parseWhen } = require('../lib/parseWhen');
+const { pickRandom, randomInt } = require('../lib/random');
+const { createQueue } = require('../lib/taskQueue');
+
+// The main project folder (this file is in the services folder, so it is one level up).
+// Folders named in config.js, like images/tea, are worked out from here.
+const PROJECT_FOLDER = path.join(__dirname, '..');
 
 // ---- Settings (read from config.js) --------------------------------------
 // Turns the friendly text in config.js ("1h", "15m") into numbers the code can use.
@@ -59,7 +63,7 @@ function readSettings() {
     maxAheadMs: duration(teaConfig.maxAhead, 'maxAhead'),
     lateGraceMs: duration(teaConfig.lateGrace, 'lateGrace', { allowZero: true }),
     timezone: resolveTimeZone(teaConfig.timezone),
-    imagesFolder: path.resolve(__dirname, teaConfig.imagesFolder), // an absolute path also works
+    imagesFolder: path.resolve(PROJECT_FOLDER, teaConfig.imagesFolder), // an absolute path also works
     checkEveryMs: teaConfig.checkEverySeconds * 1000,
     sheetRefreshMs: duration(teaConfig.sheetRefresh, 'sheetRefresh'),
     retryAfterErrorMs: duration(teaConfig.retryAfterError, 'retryAfterError'),
@@ -113,7 +117,7 @@ function canUse(userId, roleIds) {
 
 // Turns what someone typed into the moment the alarm should go off.
 //   "15:30", "7:20pm", "9am"        -> the next time the clock reads that, in the configured time zone
-//   "saturday 7:20pm", "tomorrow 9am"  -> that time on that day (see parseWhen.js for everything it reads)
+//   "saturday 7:20pm", "tomorrow 9am"  -> that time on that day (see lib/parseWhen.js for everything it reads)
 //   "20m", "1h 30m", "5d 5h 13m"    -> that long from now
 // Returns { atMs } when it worked, or { error } with one of: 'format', 'tooSoon', 'tooFar', 'past'.
 function parseAlarmTime(text, now = Date.now()) {

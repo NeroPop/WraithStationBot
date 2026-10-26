@@ -17,7 +17,7 @@ const {
   InteractionContextType,
   MessageFlags,
 } = require('discord.js');
-const { configureChannel, disableChannel, getChannelStatus } = require('../stimScheduler');
+const { configureChannel, disableChannel, getChannelStatus } = require('../services/stimScheduler');
 const { stims: stimConfig } = require('../config');
 const {
   parseDuration,
@@ -25,7 +25,7 @@ const {
   parseTimeOfDay,
   formatTimeOfDay,
   resolveTimeZone,
-} = require('../timeUtils');
+} = require('../lib/timeUtils');
 
 // A correct example, shown whenever someone gets the command wrong.
 const EXAMPLE = '`/stim set from:10 until:22 min:12h max:3d`';

@@ -6,7 +6,7 @@
 //   1. Copy it and rename it. The file name MUST match the command name.
 //   2. Change the name and description below.
 //   3. Change what happens inside execute().
-//   4. Push to GitHub and restart the server on Wispbyte.
+//   4. Push to GitHub and restart the bot's server.
 
 const { SlashCommandBuilder } = require('discord.js');
 

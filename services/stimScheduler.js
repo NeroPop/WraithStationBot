@@ -1,4 +1,4 @@
-// stimScheduler.js
+// services/stimScheduler.js
 //
 // The brain behind the random stims. It does three jobs:
 //   1. Remembers which channels are set up for stims (kept in the "Stims" Google Sheet).
@@ -18,9 +18,9 @@
 // The numbers (1 to 5 repeats, 30m to 2h, and so on) are in config.js.
 // The stims themselves are the files in the "stims" folder.
 
-const { getSheet, ensureHeadings, appendRow } = require('./sheets');
-const { sheetIds, stims: stimConfig } = require('./config');
-const { loadStims } = require('./loadFiles');
+const { getSheet, ensureHeadings, appendRow } = require('../lib/sheets');
+const { sheetIds, stims: stimConfig } = require('../config');
+const { loadStims } = require('../lib/loadFiles');
 const {
   parseDuration,
   formatDuration,
@@ -30,9 +30,9 @@ const {
   isWithinActive,
   windowMinutes,
   nextOpening,
-} = require('./timeUtils');
-const { randomInt, randomBetween, pickRandom } = require('./random');
-const { createQueue } = require('./taskQueue');
+} = require('../lib/timeUtils');
+const { randomInt, randomBetween, pickRandom } = require('../lib/random');
+const { createQueue } = require('../lib/taskQueue');
 
 // ---- Settings (read from config.js) --------------------------------------
 // Turns the friendly text in config.js ("30m", "2h") into numbers the code can use.

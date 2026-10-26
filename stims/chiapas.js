@@ -5,7 +5,7 @@
 //
 // To change how stretched out the letters get, change the two numbers below.
 
-const { randomInt } = require('../random');
+const { randomInt } = require('../lib/random');
 
 const MIN_REPEATS = 1; // every letter appears at least this many times
 const MAX_REPEATS = 12; // and at most this many times

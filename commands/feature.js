@@ -14,7 +14,7 @@
 // - Extra columns you add yourself (such as "Wraith Approved?") are left alone and empty.
 
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
-const { getSheet, ensureHeadings, appendRow } = require('../sheets');
+const { getSheet, ensureHeadings, appendRow } = require('../lib/sheets');
 const { sheetIds } = require('../config'); // the suggestions spreadsheet ID lives in config.js
 
 // ---- Settings you might want to change -----------------------------------

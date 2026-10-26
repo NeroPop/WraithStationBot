@@ -1,4 +1,4 @@
-// check.js
+// scripts/check.js
 //
 // A safety check you run on your PC BEFORE pushing to GitHub:
 //
@@ -10,7 +10,7 @@
 // sensible text, and that the stim settings in config.js make sense. If anything is wrong it
 // explains what and exits with an error, so you can fix it before the bot restarts.
 
-const { loadCommands, loadTriggers } = require('./loadFiles');
+const { loadCommands, loadTriggers } = require('../lib/loadFiles');
 
 // Counts problems so we can report them all at the end.
 let problems = 0;
@@ -69,7 +69,7 @@ try {
 
 // ---- Check the stims and their settings ----------------------------------
 try {
-  const { readSettings, toSmallText, stims } = require('./stimScheduler'); // loads the stims folder too
+  const { readSettings, toSmallText, stims } = require('../services/stimScheduler'); // loads the stims folder too
 
   readSettings(); // throws a clear error if something in config.js is wrong
   console.log('OK  config   stim settings in config.js');
@@ -104,7 +104,7 @@ try {
 // ---- Check the tea alarm settings and pictures ---------------------------
 try {
   const fs = require('node:fs');
-  const { readSettings, settings } = require('./teaAlarm');
+  const { readSettings, settings } = require('../services/teaAlarm');
 
   readSettings(); // throws a clear error if something in config.js is wrong
   console.log('OK  config   tea alarm settings in config.js');

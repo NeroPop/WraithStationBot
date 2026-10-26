@@ -5,7 +5,7 @@
 //
 // To change how long it can get, change the four numbers below.
 
-const { randomInt } = require('../random');
+const { randomInt } = require('../lib/random');
 
 const MIN_AYS = 2; // fewest "ay"s
 const MAX_AYS = 12; // most "ay"s

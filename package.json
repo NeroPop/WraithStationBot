@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "start": "node index.js",
-    "check": "node --check index.js && node check.js"
+    "check": "node --check index.js && node scripts/check.js"
   },
   "engines": {
     "node": ">=22.12.0"

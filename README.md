@@ -1,152 +1,626 @@
 # WraithStationBot
 
-JesterStation, a Discord bot for Wraithstation. Mostly party tricks.
+**JesterStation** is a Discord bot for the WraithStation community. It does party tricks: it replies to
+certain phrases, says random "stims" on a schedule, sets tea alarms, collects feature suggestions and more.
 
-## How it is laid out
+This file explains everything, starting from zero. You do not need to know how Discord bots work.
 
-| Path | What it is |
+| Quick facts | |
 |---|---|
-| `index.js` | Starts the bot. Wispbyte runs this file. |
-| `commands/` | One file per slash command. The file name is the command name (`ping.js` is `/ping`). |
-| `triggers/` | One file per chat trigger (the bot reacting to words in normal messages). |
-| `stims/` | One file per random stim (a phrase the bot says on its own). See "Random stims" below. |
-| `staffTrigger.js` | The shared code behind the "silly [name]" and "good job [name]" triggers. |
-| `stimScheduler.js` | Decides when each channel stims, and says them. |
-| `teaAlarm.js` | Saves, schedules and sends the tea alarms. |
-| `images/tea/` | Pictures for the tea alarm. The bot picks one at random. |
-| `timeUtils.js`, `random.js`, `taskQueue.js` | Small helpers for times, time zones, random numbers and running one task at a time. |
-| `loadFiles.js` | Reads the two folders above and checks the files are written correctly. |
-| `check.js` | Safety check, run with `npm run check`. Needs no token. |
-| `config.js` | Non-secret settings, such as the Google Sheet IDs. Safe to put on GitHub. |
-| `sheets.js` | Signs in to Google Sheets. Triggers and commands use it to read and write the spreadsheet. |
-| `.env` | Holds `DISCORD_TOKEN`. Set in the Wispbyte Environment tab. Never committed. |
+| Language | JavaScript (Node.js 22.12 or newer) |
+| Discord library | [discord.js](https://discord.js.org) version 14 |
+| Where data lives | Google Sheets (no database to run) |
+| Code lives at | https://github.com/NeroPop/WraithStationBot (branch `main`) |
+| Runs on | Any Node.js host. It is currently on a Pterodactyl panel that pulls `main` from GitHub on every start |
 
-## Adding a slash command
+## Contents
 
-1. Copy `commands/ping.js` and rename it to the new command name.
-2. Change the name, description and what `execute()` does.
-3. Run `npm run check` on your PC.
-4. Commit and push to `main`.
-5. Restart the server on Wispbyte. The bot registers the new command on startup.
+1. [What the bot does](#1-what-the-bot-does)
+2. [How the project is organised](#2-how-the-project-is-organised)
+3. [How it works, in plain words](#3-how-it-works-in-plain-words)
+4. [The features in detail](#4-the-features-in-detail)
+5. [The Google Sheets](#5-the-google-sheets)
+6. [Settings and secrets](#6-settings-and-secrets)
+7. [Setting it up from scratch](#7-setting-it-up-from-scratch)
+8. [Hosting and deploying](#8-hosting-and-deploying)
+9. [Everyday tasks](#9-everyday-tasks)
+10. [Troubleshooting](#10-troubleshooting)
+11. [Rules for writing code here](#11-rules-for-writing-code-here)
+12. [Glossary](#12-glossary)
 
-## Adding a chat trigger
+---
 
-1. Copy `triggers/whattime.js` and rename it.
-2. Change the `pattern` (the words to react to) and what `execute()` does.
-3. Run `npm run check`, push, and restart the server.
+## 1. What the bot does
 
-## Google Sheets
+**Slash commands** (typed starting with `/`):
 
-The "silly [name]" and "good job [name]" triggers read their staff list from a Google Sheet and save their
-cooldown times there. The shared code is in `staffTrigger.js`.
-
-The spreadsheet needs a tab called `Staff` with these headings in row 1:
-
-| Heading | Used for |
+| Command | What it does |
 |---|---|
-| `Name` | The staff names. Add or remove names here. The bot picks up changes within 5 minutes. |
-| `Last Silly` | The bot saves when it last said "Silly [name]" here (the silly trigger's cooldown). |
-| `Last Good Job` | The bot saves when it last said "Good job [name]" here (the good job trigger's cooldown). |
+| `/ping` | Replies "Pong!" so you can tell the bot is alive. |
+| `/feature` | Saves a feature suggestion to a spreadsheet. |
+| `/stim` | Staff tool: choose which channels get random stims, and when. |
+| `/tea` | Sets a tea alarm that pings Nero at a chosen time. Limited to certain roles. |
+| `/sponsor` | Posts a shout-out for SteveStreamsUK, with a picture. |
 
-The bot fills in the two `Last ...` columns itself. Do not type in them. Each trigger has its own column, so they
-never affect each other's cooldown, and each name has its own cooldown within each trigger. Both cooldowns are
-20 minutes (change `COOLDOWN_MINUTES` in `triggers/sillystaff.js` and `triggers/goodjob.js`).
+**Chat triggers** (the bot reacts to words in normal messages, with no command needed):
 
-To add another "[phrase] [name]" trigger, copy `triggers/goodjob.js`, change the phrase and reply, and add a new
-`Last ...` column to the sheet for it.
+| Someone says | The bot does |
+|---|---|
+| "what time" | Replies "Time you got a watch" |
+| "golden apple" | Replies "*coveted* golden apple" (unless "coveted" was already said first) |
+| "praise be the admins" | Replies "for all they do is divine and holy!" (unless that was already in the message) |
+| "Oh no, not Wraith from WraithStation" | Replies "Who will host the Minecraft Gauntlet now? :(" |
+| "silly" and a staff name | Posts "Silly [name]" |
+| "good job" and a staff name | Posts "Good job [name] smile" |
+| "ily wraith", "I love you wraith", "I love WraithStation" | Reacts to the message with ❤️ and 🤖 |
+| "thanks bot", "thanks jester" | Replies "You're welcome @them" |
 
-### Feature suggestions
+**On its own, without anyone asking:**
 
-`/feature` saves what someone types as a new row in the `Suggestions` tab of the suggestions spreadsheet:
-`Date`, `Suggested By` (Discord username), `Suggestion` and `Server`. If the tab is empty, the bot writes
-those headings itself. Suggestions are saved as plain text, so they can never run as spreadsheet formulas.
+- **Random stims**: short phrases posted in small text, at random times, in channels that were set up with `/stim`.
+- **Tea alarms**: when an alarm's time arrives, the bot pings Nero with a picture.
 
-The tab can be formatted as a Google Sheets table (Format > Convert to table). The bot adds each new row
-inside the table so it grows. Extra columns you add (such as "Wraith Approved?" and "Implemented?") are left
-empty by the bot. Keep the four column headings above spelled exactly as they are.
+---
 
-### Random stims
+## 2. How the project is organised
 
-The bot randomly says short phrases ("stims") in small text, but only in channels set up with `/stim`.
+```
+WraithStationBot/
+|
+|-- index.js            The starting point. Running this file starts the bot.
+|-- config.js           Every setting that is not secret (times, IDs, sheet IDs...). Safe to share.
+|-- README.md           This file.
+|-- package.json        Lists the packages the bot needs, and the "npm run check" shortcut.
+|-- package-lock.json   The exact versions of those packages. Generated by npm, do not edit.
+|-- .gitignore          Tells git which files must never be uploaded (secrets, node_modules).
+|-- .env                YOUR SECRETS. Created by hand on each machine. Never uploaded. (see section 6)
+|
+|-- commands/           One file per slash command. The file name IS the command name.
+|-- triggers/           One file per chat trigger (the bot reacting to words in messages).
+|-- stims/              One file per random stim (a phrase the bot says on its own).
+|-- images/             Pictures the bot posts.
+|     |-- tea/            Pictures for tea alarms. One is picked at random each time.
+|     |-- steve/          The picture used by /sponsor.
+|
+|-- services/           The bigger features that keep running in the background.
+|     |-- stimScheduler.js   Decides when each channel stims, and posts the stims.
+|     |-- teaAlarm.js        Saves tea alarms, watches the clock, and sends them.
+|
+|-- lib/                Shared helper code that the files above use.
+|     |-- loadFiles.js       Reads the commands, triggers and stims folders and checks the files.
+|     |-- sheets.js          Everything to do with Google Sheets (signing in, reading, writing).
+|     |-- staffTrigger.js    The shared engine behind "silly [name]" and "good job [name]".
+|     |-- timeUtils.js       Helpers for lengths of time, times of day and time zones.
+|     |-- parseWhen.js       Understands "saturday 7:20pm", "tomorrow 9am" and so on.
+|     |-- random.js          Small helpers for picking random numbers and items.
+|     |-- taskQueue.js       Makes sure only one job changes a spreadsheet copy at a time.
+|
+|-- scripts/            Tools you run by hand.
+      |-- check.js           The safety check. Run it with "npm run check" (see section 7).
+```
 
-- **The stims** are the files in `stims/`. Each exports `generate()`, which returns the text. To add one, copy a
-  file in that folder. Nobody can add stims through Discord.
-- **A session** picks one stim at random and says it 1 to 5 times, a short wait apart. Those numbers (the number of
-  repeats and the wait between them) are in `config.js` under `stims`. If the next repeat would fall outside the active hours, the session ends early.
-  A channel's repeats are never spaced further apart than its own `/stim` max wait (for example, a channel with
-  `max:10m` repeats every 10 minutes or less, even if `config.js` allows up to 30 minutes).
-- **`/stim set from:10 until:22 min:12h max:3d`** (optional `timezone:`, default `Europe/London`) starts stims in the
-  current channel. `min` and `max` are the wait between sessions (use `m`, `h` or `d`). Running it again in the same
-  channel overwrites the old settings. `/stim off` stops it and `/stim status` shows the settings.
-  Only people with the Manage Channels permission can use `/stim`.
-- **The `Stims` tab** of the stims spreadsheet stores each channel's settings and schedule, so a restart carries on
-  where it left off. The bot writes the headings itself. You can edit the hours and gaps there by hand (changes are
-  picked up within 5 minutes), and set `Status` to `Active` to turn a paused channel back on.
+**The one-sentence version of each folder:**
 
-### Tea alarm
+- `commands/`, `triggers/` and `stims/` are the **features you add to**. Each one is a small, separate file.
+- `services/` is the **machinery** for the two features that need a clock (stims and tea alarms).
+- `lib/` is **shared tools**, so the same code is not written twice.
+- `scripts/` is **tools for you**, not for the bot.
 
-`/tea set time:saturday 7:20pm` pings one person (set in `config.js`) in that channel at that time, with a
-"Tea Alarm!" embed and a random picture from `images/tea/`.
+---
 
-The `time` box understands several ways of saying when (capital letters, commas and little words like "on", "at" and
-"next" do not matter):
+## 3. How it works
+
+**Starting up.** When `index.js` runs it does these things in order:
+
+1. Reads the secrets from the `.env` file.
+2. Loads every file in `commands/` and `triggers/`. (If any file is written wrongly, it says which one.)
+3. Logs in to Discord.
+4. Tells Discord the list of slash commands. This happens on **every start**, so adding or deleting a file in
+   `commands/` and restarting is all it takes.
+5. Checks it can open every Google Sheet, and prints a line for each one.
+6. Starts the stim scheduler and the tea alarms, which then check the clock every few seconds.
+
+**While running:**
+
+- When someone uses a **slash command**, the matching file in `commands/` handles it. If it breaks, the person
+  gets a short private "something went wrong" message and the details are written to the console.
+- When someone sends a **message**, the bot (ignoring other bots) tests it against every trigger's `pattern`.
+  Each trigger that matches runs. A broken trigger can never stop the others.
+- **Stims and tea alarms** run on timers. They keep a copy of their spreadsheet in memory and re-read it every
+  5 minutes, because Google limits how often a bot may ask it for data.
+
+**Google Sheets is the bot's memory.** Anything that must survive a restart (which channels stim, when the next
+stim is due, tea alarms, cooldowns, suggestions) is saved in a spreadsheet. That means you can restart or move
+the bot to another computer and nothing is lost, and staff can look at (and carefully edit) the data.
+
+**Time zones.** Times typed by people (hours for stims, tea alarm times) are read in UK time by default, and the
+bot handles the clocks going forward and back. Times shown in Discord messages use Discord's own timestamps, so
+each person sees them in **their own** time zone.
+
+---
+
+## 4. The features in detail
+
+### Slash commands
+
+#### `/feature`
+
+`/feature suggestion:<your idea>` saves the idea as a new row in the **Suggestions** sheet: the date and time
+(UTC), who suggested it (their Discord username), the idea, and which server it came from. The person gets a
+private "thanks" message. The text is saved exactly as typed and can never run as a spreadsheet formula.
+
+If the Suggestions tab is empty, the bot writes the column headings itself. Staff can add extra columns (for
+example "Wraith Approved?" and "Implemented?"). The bot leaves those empty. It also works if the tab is formatted
+as a Google Sheets *table*: new rows go inside the table.
+
+#### `/stim`
+
+*(Code: `commands/stim.js`, which uses `services/stimScheduler.js`.)* Staff use this to choose where the bot
+posts random stims. Only people with the **Manage Channels** permission
+can see it, and it only works in servers (server admins can change who may use it under Server Settings, then
+Integrations). The bot **only** stims in channels set up with `/stim set`.
+
+| Command | What it does |
+|---|---|
+| `/stim set from:10 until:22 min:12h max:3d` | Starts stims in the channel you typed it in. Typing it again in the same channel replaces that channel's old settings. |
+| `/stim off` | Stops stims in this channel (the settings stay in the sheet). |
+| `/stim status` | Shows this channel's settings and when the next stim is due. |
+
+The options for `/stim set`:
+
+| Option | Meaning | Examples |
+|---|---|---|
+| `from` | The hour of day stims may start (24 hour clock) | `10`, `10:30` |
+| `until` | The hour of day stims must stop. It can be earlier than `from` to cross midnight (`22` to `2`). | `22`, `22:30` |
+| `min` | The shortest wait between stim sessions | `90m`, `12h`, `1d` |
+| `max` | The longest wait between stim sessions | `2h`, `36h`, `3d` |
+| `timezone` (optional) | The time zone for the hours. Defaults to `Europe/London`. | `America/New_York` |
+
+If anything is wrong the bot explains exactly what, with a correct example. Lengths of time use `m` (minutes),
+`h` (hours) or `d` (days), and can be combined (`1d 12h`).
+
+**How stimming works:**
+
+1. After `/stim set`, the first session starts a random time between `min` and `max` from now (moved into the
+   active hours if it lands outside them).
+2. A **session** picks **one stim at random** (never the same one as the last session) and says it several times
+   (the number of repeats, and the wait between them, are settings in `config.js`).
+3. A channel's repeats are never spaced further apart than that channel's own `max`.
+4. If the next repeat would land **outside the active hours**, the session ends early. The next session then
+   starts when the hours next open, plus a small random delay (also a setting).
+5. After a normal session, the next one starts a random time between `min` and `max` later.
+6. Stims are always posted in Discord's **small text**, which the bot adds itself.
+7. If the bot was off and a stim was missed, it does **one** catch-up stim when it returns (if inside the active
+   hours) and then starts a fresh session.
+8. If the bot can no longer post in a channel (deleted, or permissions removed) it **pauses** that channel and
+   writes about it in the console instead of retrying forever.
+
+The channels' settings and schedules are saved in the **Stims** sheet (see section 5).
+
+#### `/tea`
+
+*(Code: `commands/tea.js`, which uses `services/teaAlarm.js` and `lib/parseWhen.js`.)* Sets an alarm. At the
+chosen time the bot posts in that channel, pings the person named in `config.js`, and
+shows a yellow "Tea Alarm!" embed with a random picture from `images/tea/`.
+
+| Command | What it does |
+|---|---|
+| `/tea set time:saturday 7:20pm` | Sets an alarm. |
+| `/tea cancel` | Cancels the waiting alarms in this channel. |
+| `/tea status` | Shows the waiting alarms in this channel and when the next may be set. |
+
+What you can put in the `time` box. Capital letters, commas and little words like "on", "at" and "next" do not
+matter:
 
 | You type | Meaning |
 |---|---|
-| `saturday 7:20pm`, `7:20pm on saturday`, `sat 19:20` | That time on the next Saturday. If it is Saturday and that time has gone by, it means next week. |
-| `tomorrow 9am`, `today 6pm`, `tonight 9pm` | That time tomorrow or today. (`today` with a time that has gone by is refused.) |
-| `7:20pm`, `19:20`, `9am`, `noon`, `midnight` | The next time the clock reads that. Without am or pm it is the 24 hour clock. |
-| `20m`, `1h 30m`, `5d 5h 13m` | That long from now (`m`, `h` or `d`). |
+| `saturday 7:20pm`, `7:20pm on saturday`, `sat 19:20` | That time on the **next** Saturday. If it is Saturday and that time has already gone, it means next week. |
+| `tomorrow 9am`, `today 6pm`, `tonight 9pm` | That time tomorrow or today. `today` with a time that has gone is refused. |
+| `7:20pm`, `19:20`, `9am`, `noon`, `midnight` | The next time the clock reads that. With no am or pm it is the 24 hour clock. |
+| `20m`, `1h 30m`, `5d 5h 13m` | That long from now. |
 
-- Clock times and days are read in UK time (`teaAlarm.timezone` in `config.js`), including when the clocks change.
-  After you set an alarm, the bot shows the full day and date it understood, so you can check it.
-- Only people with a role listed in `teaAlarm.allowedRoleIds` can use it (and the people in `alwaysAllowedUserIds`).
-  To allow another role, add its ID to that list.
-- Only one alarm can be set per hour, shared by everyone (`teaAlarm.cooldown`). Cancelling a waiting alarm resets
-  the limit, so a wrong time can be fixed straight away.
-- Times in the messages use Discord's own timestamp, so each person sees them in their own time zone.
-- Alarms can be set up to 7 days ahead (`maxAhead`). If the bot was offline when one was due, it still sends it if
-  it is at most 15 minutes late (`lateGrace`), otherwise the alarm is marked `Missed`.
-- `/tea cancel` cancels the waiting alarms in the channel and `/tea status` lists them.
-- Alarms are saved in the `TeaAlarm` tab (the bot writes the headings itself), so a restart loses nothing.
-- Pictures need the **Attach Files** permission. Without it, the alarm is sent without a picture.
+After you set an alarm the bot shows you the full day and date it understood, so you can check it.
 
-### Love for Wraith
+**The rules:**
 
-When someone says "ily wraith", "I love you wraith", "I love WraithStation" and similar (`triggers/lovewraith.js`),
-the bot reacts to that message with ❤️ and 🤖. An @mention of Wraith works too (Wraith's user ID is in that file).
-To change the reactions or the ways of saying it, edit the settings at the top of that file.
-It needs the **Add Reactions** permission.
+- Only people with a role listed in `teaAlarm.allowedRoleIds` in `config.js` can use it, plus the people in
+  `alwaysAllowedUserIds`. To allow another role, add its ID to the list.
+- Only **one alarm can be set per hour**, shared by everyone (`teaAlarm.cooldown`). **Cancelling a waiting alarm
+  resets that limit**, so a wrong time can be fixed straight away. An alarm that has already gone off still counts.
+- Alarms can be set up to a week ahead (`maxAhead`).
+- If the bot was offline when an alarm was due, it still sends it if it is at most 15 minutes late
+  (`lateGrace`). After that the alarm is marked **Missed** and nothing is sent.
+- Alarms are saved in the **TeaAlarm** sheet, so a restart loses nothing.
+- Pictures need the **Attach Files** permission. Without it the alarm still goes out and still pings, just
+  without a picture.
 
-### Thanking the bot
+#### `/sponsor`
 
-When someone says "thanks bot", "thank you jester", "ty jesterstation" and similar (`triggers/thanksbot.js`), the bot
-replies "You're welcome @user", mentioning the person who said thanks. An @mention of the bot works too (the bot's user
-ID is in that file). To change the answer or the names it responds to, edit the settings at the top of that file.
+Posts a public embed saying "JesterStation Was brought to you by: SteveStreamsUK !!", with Steve's icon
+(`images/steve/steve_icon.png`) and a footer. The wording, footer, picture and colour are settings at the top of
+`commands/sponsor.js`. Like the tea pictures, the image needs **Attach Files**. Without it the shout-out still
+posts, just without the picture.
 
-### Sponsor shout-out
+### Chat triggers
 
-`/sponsor` posts an embed saying "JesterStation Was brought to you by: SteveStreamsUK !!" with Steve's icon
-(`images/steve/steve_icon.png`). To change the wording, picture or colour, edit the three settings at the top of
-`commands/sponsor.js`. Like the tea pictures, the image needs the **Attach Files** permission. Without it, the
-shout-out is still posted, just without the picture.
+Each trigger is one file in `triggers/`. They work in **every channel the bot can read**, in every server it is in.
+Capital letters never matter.
 
-### Sharing
-
-Every spreadsheet must be shared (as Editor) with the service account's email address.
-Sheet IDs are not secret, so they are listed in `config.js` (`sheetIds`). To add a new spreadsheet for a
-future feature, share it with the service account and add a line to `config.js`.
-
-Environment variables to set in the Wispbyte Environment tab (these ARE secret):
-
-| Variable | What it is |
+| File | Notes |
 |---|---|
-| `GOOGLE_SERVICE_ACCOUNT_EMAIL` | The `client_email` value from the Google JSON key file |
-| `GOOGLE_PRIVATE_KEY` | The `private_key` value from the Google JSON key file |
+| `whattime.js` | The phrase "what time" as whole words ("what timeline" does not count). |
+| `goldenapple.js` | "golden apple" or "golden apples". Stays quiet if "coveted" was already said earlier in the same message. |
+| `praiseadmins.js` | "praise be the admins". Stays quiet if the reply is already part of the message. Punctuation between the words is fine. |
+| `ohnowraith.js` | "Oh no, not Wraith from WraithStation". Punctuation between the words is fine. |
+| `lovewraith.js` | Reacts with ❤️ then 🤖 (two reactions, no message). Understands "ily", "ilysm", "ilu", "I love you", "love you", "luv u" and similar, followed by "wraith", "wraithstation" or an @mention of Wraith. Also "I love wraith". Needs the **Add Reactions** permission. |
+| `thanksbot.js` | "thanks", "thank you", "thx", "ty" and similar, followed by "bot", "jester", "jesterstation" or an @mention of the bot. Replies and @mentions the person who said thanks. |
+| `sillystaff.js` | See "Staff name triggers" below. |
+| `goodjob.js` | See "Staff name triggers" below. |
 
-## Wispbyte setup
+#### Staff name triggers: "silly [name]" and "good job [name]"
 
-- Docker image: `nodejs_24`
-- Startup file: `index.js`
-- Environment variable: `DISCORD_TOKEN`
-- The server pulls `main` from GitHub on every start and runs `npm install` itself.
+These two react only to names listed in the **Staff** sheet (the `Name` column), so people can add or remove names
+without touching code. They share their code in `lib/staffTrigger.js`.
+
+- "silly steve" posts **Silly Steve**. "good job steve" or "Good job, Steve!" posts **Good job Steve smile**.
+- Each name has its **own cooldown** (currently 20 minutes) for each trigger, so saying "silly Steve" twice in a
+  row is ignored the second time, but "silly Nero" still works, and "good job Steve" has its own separate timer.
+- The time the bot last replied is saved in the sheet (`Last Silly` and `Last Good Job` columns), so cooldowns
+  survive a restart.
+- Several names in one message ("silly Steve and silly Nero") get one line each.
+- The cooldown is `COOLDOWN_MINUTES` at the top of each trigger's file.
+
+### Random stims
+
+Each stim is one file in `stims/`. Today there are four:
+
+| File | What it says |
+|---|---|
+| `wormtown.js` | `...Wormtown` |
+| `chiapas.js` | "chiapas" with every letter repeated a random number of times (like `chhhiiappasss`) |
+| `ayay.js` | A random number of "ay"s and then a random number of 😔 |
+| `notpossible.js` | `this is NOT possible.` (always exactly this) |
+
+All stims are posted in small text. Nobody can add stims from Discord. They are only added in code, by adding a
+file (see section 9). See `/stim` above for when and where they are posted.
+
+---
+
+## 5. The Google Sheets
+
+The bot uses **four spreadsheets**. Their IDs are in `config.js` under `sheetIds`. Each must be **shared with the
+bot's service account email as Editor** (see section 7). The "ID" of a spreadsheet is the long part of its web
+address between `/d/` and `/edit`.
+
+Where it says "the bot writes the headings itself", you can leave a brand new empty tab and the bot fills in row 1.
+
+| Sheet (`sheetIds` name) | Tab | Headings in row 1 |
+|---|---|---|
+| **Staff list** (`staffList`) | `Staff` | `Name`, `Last Silly`, `Last Good Job`. **You must type these headings yourself.** |
+| **Suggestions** (`suggestions`) | `Suggestions` | `Date`, `Suggested By`, `Suggestion`, `Server`. The bot writes them itself. Extra columns you add are left alone. |
+| **Stims** (`stims`) | `Stims` | `Channel ID`, `Channel Name`, `Server`, `Status`, `Active From`, `Active Until`, `Timezone`, `Min Gap`, `Max Gap`, `Next Run`, `Stims Left`, `Current Stim`, `Set By`. The bot writes them itself. |
+| **Tea alarms** (`teaAlarm`) | `TeaAlarm` | `Alarm ID`, `Alarm Time`, `Channel ID`, `Channel Name`, `Server`, `Set By`, `Set By ID`, `Set At`, `Status`. The bot writes them itself. |
+
+**What is safe to edit by hand:**
+
+- **Staff sheet:** add or remove names in the `Name` column. The bot notices within 5 minutes. Do **not** type in
+  `Last Silly` or `Last Good Job`. The bot manages those, and it also remembers recent replies in its own
+  memory, so editing or clearing a cell does not cut a cooldown short (restarting the bot clears its memory).
+- **Stims sheet:** you can change a channel's `Active From`, `Active Until`, `Timezone`, `Min Gap` and `Max Gap`
+  (changes are noticed within 5 minutes). Set `Status` back to `Active` to turn a paused or off channel on again.
+  Leave `Next Run`, `Stims Left` and `Current Stim` to the bot. `Status` is `Active`, `Off`, or `Paused (...)`.
+- **Tea alarm sheet:** `Status` is `Pending`, `Sent`, `Cancelled`, `Missed` or `Failed (cannot post)`. Setting a
+  pending alarm to `Cancelled` cancels it.
+- **Suggestions sheet:** it is yours. Add columns, sort it, turn it into a table.
+
+Keep the **spelling of the headings exact**. The bot finds columns by name.
+
+---
+
+## 6. Settings and secrets
+
+There are two places for settings, and the difference matters:
+
+| | `config.js` | `.env` |
+|---|---|---|
+| Holds | Normal settings: sheet IDs, times, role IDs, cooldowns | **Secrets**: the Discord token and the Google key |
+| Uploaded to GitHub? | **Yes**, it is meant to be | **Never.** `.gitignore` blocks it. |
+| Edit when | You want to change how the bot behaves | You set up a new machine, or a secret changes |
+
+### `config.js`
+
+Every setting has a comment next to it explaining it. Lengths of time are written as a number plus `m`
+(minutes), `h` (hours) or `d` (days), like `'30m'`, `'2h'`, `'1d'`, or combined like `'1h 30m'`. The sections:
+
+| Section | What it controls |
+|---|---|
+| `sheetIds` | The four Google spreadsheets (see section 5). |
+| `stims` | How many times a stim repeats, how long between repeats, the default time zone, how often to check the clock, and so on. |
+| `teaAlarm` | Who gets pinged, which roles may use `/tea`, the cooldown, how far ahead, the late grace, the pictures folder. |
+
+If a value is written wrongly (for example `'2 hoors'`), `npm run check` and the bot's startup name the exact
+setting and explain what to fix.
+
+### `.env` (the secrets file)
+
+Create a plain text file called `.env` (nothing before the dot) in the main project folder, with three lines:
+
+```
+DISCORD_TOKEN=your bot token
+GOOGLE_SERVICE_ACCOUNT_EMAIL=the client_email value from the Google key file
+GOOGLE_PRIVATE_KEY=the private_key value from the Google key file
+```
+
+| Variable | What it is | Where to get it |
+|---|---|---|
+| `DISCORD_TOKEN` | The bot's password for Discord | Developer Portal, **Bot** page, **Reset Token** (shown once) |
+| `GOOGLE_SERVICE_ACCOUNT_EMAIL` | The bot's Google "robot account" address | The `client_email` line in the downloaded Google JSON key file |
+| `GOOGLE_PRIVATE_KEY` | The robot account's secret key | The `private_key` line in the same file |
+
+Pasting is forgiving: the bot removes stray quote marks, spaces and commas, accepts the key with real line
+breaks or with `\n` written out, and checks it can be read. If something is still wrong, the console says what.
+
+**Treat these three values like passwords.** Never paste them in chat, screenshots or GitHub. If one leaks,
+reset the token in the Developer Portal, or delete the Google key and make a new one.
+
+---
+
+## 7. Setting it up from scratch
+
+You need: a computer with [Node.js](https://nodejs.org) **22.12 or newer** and [git](https://git-scm.com), a
+Discord account, a Google account, and a GitHub account.
+
+### Step 1. Get the code
+
+```bash
+git clone https://github.com/NeroPop/WraithStationBot.git
+```
+
+Then, in a terminal inside the new folder, install the packages the bot needs:
+
+```bash
+npm install
+```
+
+### Step 2. Make the Discord application
+
+1. Go to the [Discord Developer Portal](https://discord.com/developers/applications) and click **New Application**.
+2. **Bot** page: click **Reset Token** and copy it somewhere safe. This is your `DISCORD_TOKEN` (it is shown only once).
+3. Same page, **Privileged Gateway Intents**: switch **Message Content Intent ON** (the chat triggers cannot work
+   without it). Leave **Presence** and **Server Members** off, because the bot does not use them.
+4. **Installation** page, under **Default Install Settings**, **Guild Install**:
+   - Scopes: `applications.commands` and `bot`
+   - Permissions: View Channels, Send Messages, Send Messages in Threads, Read Message History, Embed Links,
+     **Attach Files** (for the tea and sponsor pictures), Add Reactions, Use External Emojis
+5. Copy the install link from the same page, open it, and add the bot to your server.
+
+By default anyone can add a *public* bot to their own server. You can switch **Public Bot** off on the **Bot**
+page if you want only yourself to be able to.
+
+### Step 3. Make the Google "robot account"
+
+1. Go to the [Google Cloud console](https://console.cloud.google.com) and create a new project.
+2. **APIs & Services**, **Library**: find **Google Sheets API** and click **Enable**.
+3. **IAM & Admin**, **Service Accounts**: create a service account (any name). No roles are needed.
+4. Open it, go to **Keys**, **Add key**, **Create new key**, **JSON**. A file downloads, **once**. Keep it safe
+   and never upload it to GitHub (`.gitignore` already blocks the usual file names).
+5. Open that JSON file in a text editor. You need two values from it: `client_email` and `private_key`.
+
+(If creating a key is blocked, it is usually an organisation policy on a work or school Google account. Use a
+personal one.)
+
+### Step 4. Make and share the spreadsheets
+
+1. Create the four spreadsheets listed in section 5 (or use your existing ones), each with the right tab name.
+2. For each one: click **Share**, paste the `client_email` address, set it to **Editor**, untick "Notify people".
+3. Copy each spreadsheet's ID into `config.js` under `sheetIds`.
+4. In the **Staff** sheet, type the headings `Name`, `Last Silly` and `Last Good Job` in row 1, and list your
+   staff under `Name`.
+
+### Step 5. Add your secrets
+
+Create the `.env` file described in section 6 with your three values.
+
+### Step 6. Run the safety check
+
+```bash
+npm run check
+```
+
+This checks, **without** needing the token or the internet, that every command, trigger and stim file is written
+correctly, that each trigger's example messages behave as they should, that every stim always produces sensible
+text, that the settings in `config.js` make sense, and that the tea and sponsor pictures exist. It ends with
+`All checks passed. Safe to push.` or tells you exactly what to fix. **Run it before every push.**
+
+### Step 7. Start the bot
+
+```bash
+npm start
+```
+
+A healthy start prints something like this (the numbers will differ):
+
+```
+Logged in as JesterStation#3484
+Registered 5 slash command(s).
+Connected to Google Sheet "StaffList" (staffList).
+Connected to Google Sheet "BotSuggestions" (suggestions).
+Connected to Google Sheet "StimSheet" (stims).
+Connected to Google Sheet "Tea Alarm" (teaAlarm).
+Stim scheduler is running (2 channel(s) set up).
+Tea alarms are running (0 waiting).
+```
+
+**Only ever run ONE copy of the bot with the same token.** Two copies would both answer every message and both
+change the same spreadsheets. If you test on your own computer, stop the hosted one first.
+
+New slash commands can take a few minutes to appear in Discord. Press `Ctrl+R` to refresh Discord if they do not.
+
+---
+
+## 8. Hosting and deploying
+
+The bot only works while it is running, so it lives on a host that is always on. Any host that runs Node.js
+works. The setup below is for a **Pterodactyl** panel (the same idea applies to other panels).
+
+**How deploying works:** you push your changes to the `main` branch on GitHub. When the server **starts**, it
+pulls the latest code from GitHub and runs `npm install`. So the routine is:
+
+1. Run `npm run check`.
+2. Commit and push to `main`.
+3. **Restart the server** in the panel. The new code is now live.
+
+### Server settings (the Startup page)
+
+| Setting | Value |
+|---|---|
+| Docker image | **Node.js 22 or newer** (for example `ghcr.io/parkervcp/yolks:nodejs_24`). Older versions such as Node 21 will not work, because the Google libraries need Node 22+. |
+| Git repo address | `https://github.com/NeroPop/WraithStationBot.git` |
+| Install branch | `main` |
+| User uploaded files | **Off** (when on, the install step is skipped and nothing is downloaded) |
+| Auto update | **On** (pulls the latest code at every start) |
+| Main file | `index.js` |
+| Git username / access token | empty (the repository is public) |
+| Additional node packages | empty (`package.json` already lists everything) |
+
+The repository is only downloaded when the server is **installed**, so after setting these use the panel's
+**Reinstall Server** once. It only clones into an **empty** folder, so delete any leftover files first.
+
+Then create the `.env` file (section 6) in the panel's **Files** tab. It is not in GitHub, so it is not touched
+by updates.
+
+### A known problem with some Pterodactyl startup commands
+
+Some panels ship a startup command that ends like this:
+
+```text
+if [[ "${MAIN_FILE}" == "*.js" ]]; then node ... ; else ts-node --esm ... ; fi
+```
+
+Because `"*.js"` is in quote marks, it never matches `index.js`, so it wrongly runs the bot through `ts-node` and
+crashes with an error mentioning `ts.sys` or `fileExists`. The fix (the panel admin does it, for this server only)
+is to make the command end with the plain run instead:
+
+```text
+if [[ -d .git ]] && [[ ${AUTO_UPDATE} == "1" ]]; then git pull; fi; if [[ ! -z ${NODE_PACKAGES} ]]; then /usr/local/bin/npm install ${NODE_PACKAGES}; fi; if [[ ! -z ${UNNODE_PACKAGES} ]]; then /usr/local/bin/npm uninstall ${UNNODE_PACKAGES}; fi; if [ -f /home/container/package.json ]; then /usr/local/bin/npm install; fi; /usr/local/bin/node "/home/container/${MAIN_FILE}" ${NODE_ARGS}
+```
+
+### Things to know about hosting
+
+- **Anyone with admin access to the panel can read your files**, including `.env`. Host with people you trust, and
+  reset the token and Google key if that ever changes.
+- A small allowance (about 256 MB of memory) is plenty.
+- **Shared free hosts can be blocked by Discord.** Some free hosts put many bots on one IP address. If Discord
+  limits that address, the bot stays online but cannot reply for a while ("Discord has blocked this node's IP").
+  It lifts by itself. Do not keep restarting. Moving to a host with fewer bots fixes it for good.
+
+---
+
+## 9. Everyday tasks
+
+### Add a slash command
+1. Copy `commands/ping.js` and rename it. **The file name must be the command name** (`dice.js` is `/dice`).
+2. Change the name, description and what `execute()` does.
+3. `npm run check`, commit, push, restart. The bot registers the new command on startup.
+
+### Add a chat trigger
+1. Copy `triggers/whattime.js` and rename it (the name is free).
+2. Change the `pattern` (the words to react to) and what `execute()` does. Add `examples` so the check can test it.
+3. `npm run check`, commit, push, restart.
+
+A trigger file exports `pattern` (a regular expression, with no `g` flag), `execute(message)`, and optionally
+`examples` (`shouldMatch` and `shouldNotMatch` lists).
+
+### Add a "[phrase] [staff name]" trigger
+1. Copy `triggers/goodjob.js` and change the `phrase`, the `reply` and the cooldown.
+2. Add a new column to the **Staff** sheet for it (named in `TIME_HEADING`), for example `Last Well Done`.
+3. `npm run check`, commit, push, restart.
+
+### Add or remove a staff name
+Edit the `Name` column of the Staff sheet. Within 5 minutes the triggers pick it up. No restart needed.
+
+### Add a stim
+1. Copy `stims/wormtown.js` and rename it.
+2. Change what `generate()` returns. It runs every time the stim is said, so it can vary. Do **not** add the small
+   text marker; the bot adds it. Optionally add a `pattern` the output must always match.
+3. `npm run check`, commit, push, restart. It joins the rotation in every channel that already stims.
+
+### Change when or how often a channel stims
+Use `/stim set` in that channel (it replaces the old settings), or edit that channel's row in the Stims sheet. To
+change how many repeats a session has, or the wait between them, edit `stims` in `config.js`.
+
+### Add tea pictures
+Put `.png`, `.jpg`, `.jpeg`, `.gif` or `.webp` files (under 8 MB each) in `images/tea/`. File names do not matter.
+Commit, push, restart.
+
+### Let another role use `/tea`
+Add its role ID to `allowedRoleIds` in `config.js`. (Discord: switch on Developer Mode, then Server Settings,
+Roles, right-click the role, **Copy Role ID**.)
+
+### Change a reply or message
+Open the file for that feature and edit the text near the top. Each file's top comment explains its settings.
+
+### Add a new Google Sheet for a future feature
+1. Share the spreadsheet with the service account email (Editor).
+2. Add a line to `sheetIds` in `config.js` with a short name and the ID. The startup check then reports on it.
+3. In your code, use `getSheet`, `appendRow` and `ensureHeadings` from `lib/sheets.js`. See `commands/feature.js`
+   for a small example.
+
+---
+
+## 10. Troubleshooting
+
+| What you see | Likely cause | What to do |
+|---|---|---|
+| Bot is online but does not reply to anything | Message Content intent is off, or the host's IP is blocked by Discord | Turn on **Message Content Intent** in the Developer Portal. If the console banner says Discord has blocked the IP, wait it out (see section 8). |
+| A slash command is missing | New commands take a few minutes; or the bot was added without the `applications.commands` scope; or you lack the permission | Wait, then press `Ctrl+R`. Re-add the bot with the install link. `/stim` needs **Manage Channels**; `/tea` needs an allowed role. |
+| `No DISCORD_TOKEN found` | No `.env` file, or the line is missing | Create `.env` (section 6). |
+| `An invalid token was provided` | The token was reset or copied wrongly | Reset it in the Developer Portal, copy the new one immediately, update `.env`. The console prints the bot ID inside the token, which should match your Application ID. |
+| `Google Sheets is not set up. Missing from the .env file: ...` | Those variables are missing from `.env` | Add them. |
+| `GOOGLE_PRIVATE_KEY looks cut off or damaged` | The key was only partly copied | Copy the whole `private_key` line from the Google JSON file again. |
+| Google error about permission, or "not found" | The spreadsheet is not shared with the service account, or the ID is wrong, or the Sheets API is off | Share it (Editor) with the `client_email`, check the ID in `config.js`, enable the Sheets API. |
+| `The "Staff" tab needs a column headed "Last Silly" in row 1` (or similar) | A heading is missing or spelled differently | Fix row 1 of that tab. Spelling must be exact. |
+| `Cannot find module` or the server crashes at start | `npm install` did not run, or a file is in the wrong place | Check the console above the error; run `npm install`. |
+| Crash mentioning `ts-node`, `ts.sys` or `fileExists` | The panel's startup command (see section 8) | Ask the panel admin to fix the startup command. |
+| Every reply appears twice | Two copies of the bot are running with the same token | Stop one. |
+| Stims never appear in a channel | It was never set up, `Status` is not `Active`, it is outside the active hours, or the bot cannot post there | Run `/stim status`, and check the Stims sheet. |
+| A tea alarm did not go off | The bot was offline for more than 15 minutes around that time (it shows as `Missed`), or it could not post (`Failed`) | Check the TeaAlarm sheet's `Status`. |
+| Pictures are missing from tea alarms or `/sponsor` | The **Attach Files** permission is missing | Give the bot that permission in the Developer Portal install settings and in the server's role settings. |
+| `npm run check` fails | A file is written wrongly | It names the file and the problem. Fix it and run it again. |
+
+---
+
+## 11. Rules for writing code here
+
+These are deliberate, and apply to everything in the project:
+
+- **Comment generously.** Every file starts with a comment saying what it is and where it lives. Explain *why*,
+  not just *what*, in plain words.
+- **Anyone should be able to read it.** Prefer clear names and simple code over clever code.
+- **One job per file.** Commands, triggers and stims are small, separate files.
+- **No em-dashes** (the long dash character) in code, comments, messages or documents. Use a comma, a full stop
+  or a hyphen.
+- **Plain JavaScript, no build step.** Files use `require` (CommonJS).
+- **Secrets never go in the code.** They live in `.env`.
+- **Run `npm run check` before every push.**
+
+---
+
+## 12. Glossary
+
+| Word | Meaning |
+|---|---|
+| **Slash command** | A command you type starting with `/`, which Discord shows in a menu. |
+| **Trigger** | The bot reacting to words someone says in a normal message. |
+| **Stim** | A short phrase the bot says on its own, at random times, in small text. |
+| **Session** | One run of a stim: the bot picks one stim and says it a few times. |
+| **Embed** | A formatted card in Discord, with a coloured stripe, a title, a picture and a footer. |
+| **Ephemeral / private reply** | A reply only the person who used the command can see. |
+| **Cooldown** | A wait before something can happen again. |
+| **Intent** | A permission switch in the Developer Portal for what events the bot may receive. |
+| **Token** | The bot's password for Discord. |
+| **Service account** | A Google "robot" with its own email address, which you share spreadsheets with. |
+| **Spreadsheet ID** | The long code in a Google Sheet's web address that identifies it. |
+| **`.env`** | The file of secrets on each machine. Never uploaded. |
+| **Pterodactyl** | The control panel the bot is currently hosted on. |
+| **Repository (repo)** | The project's folder of code on GitHub. |
