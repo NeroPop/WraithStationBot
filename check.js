@@ -24,6 +24,13 @@ try {
     // (for example a name with capital letters or a description that is too long).
     command.data.toJSON();
     console.log(`OK  command  /${command.data.name}`);
+
+    // A command can list the picture it uses (imagePath). A missing picture is a reminder to
+    // commit it, not a failure, because the command still works without it.
+    if (command.imagePath) {
+      const present = require('node:fs').existsSync(command.imagePath);
+      console.log(present ? `OK  picture  /${command.data.name} has its picture` : `NOTE  /${command.data.name} picture not found at ${command.imagePath}`);
+    }
   }
 } catch (error) {
   problems++;

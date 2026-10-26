@@ -88,6 +88,13 @@ The bot randomly says short phrases ("stims") in small text, but only in channel
 - Alarms are saved in the `TeaAlarm` tab (the bot writes the headings itself), so a restart loses nothing.
 - Pictures need the **Attach Files** permission. Without it, the alarm is sent without a picture.
 
+### Sponsor shout-out
+
+`/sponsor` posts an embed saying "JesterStation Was brought to you by: SteveStreamsUK !!" with Steve's icon
+(`images/steve/steve_icon.png`). To change the wording, picture or colour, edit the three settings at the top of
+`commands/sponsor.js`. Like the tea pictures, the image needs the **Attach Files** permission. Without it, the
+shout-out is still posted, just without the picture.
+
 ### Sharing
 
 Every spreadsheet must be shared (as Editor) with the service account's email address.
