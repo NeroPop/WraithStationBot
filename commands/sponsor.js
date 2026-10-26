@@ -18,7 +18,7 @@ const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discor
 // ---- Settings you might want to change -----------------------------------
 const TEXT = 'JesterStation Was brought to you by: SteveStreamsUK !!'; // the words in the embed
 const IMAGE_PATH = path.join(__dirname, '..', 'images', 'steve', 'steve_icon.png'); // the picture
-const COLOR = e2ffcf; // the stripe down the side of the embed
+const COLOR = 0xe2ffcf; // the stripe down the side of the embed
 
 // The error code Discord gives when the bot is missing a permission (here, Attach Files).
 const MISSING_PERMISSIONS = 50013;
