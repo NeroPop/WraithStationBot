@@ -10,6 +10,7 @@ JesterStation, a Discord bot for Wraithstation. Mostly party tricks.
 | `commands/` | One file per slash command. The file name is the command name (`ping.js` is `/ping`). |
 | `triggers/` | One file per chat trigger (the bot reacting to words in normal messages). |
 | `stims/` | One file per random stim (a phrase the bot says on its own). See "Random stims" below. |
+| `staffTrigger.js` | The shared code behind the "silly [name]" and "good job [name]" triggers. |
 | `stimScheduler.js` | Decides when each channel stims, and says them. |
 | `teaAlarm.js` | Saves, schedules and sends the tea alarms. |
 | `images/tea/` | Pictures for the tea alarm. The bot picks one at random. |
@@ -36,12 +37,23 @@ JesterStation, a Discord bot for Wraithstation. Mostly party tricks.
 
 ## Google Sheets
 
-The "silly [name]" trigger reads its staff list from a Google Sheet and saves its cooldown times there.
+The "silly [name]" and "good job [name]" triggers read their staff list from a Google Sheet and save their
+cooldown times there. The shared code is in `staffTrigger.js`.
 
-The spreadsheet needs a tab called `Staff` with two headings in row 1: `Name` and `Last Said`.
-Add or remove names in the `Name` column. The bot picks up changes within 5 minutes.
-The bot fills in `Last Said` itself. Do not type in that column.
-Each name has its own 30 minute cooldown (change `COOLDOWN_MINUTES` in `triggers/sillystaff.js`).
+The spreadsheet needs a tab called `Staff` with these headings in row 1:
+
+| Heading | Used for |
+|---|---|
+| `Name` | The staff names. Add or remove names here. The bot picks up changes within 5 minutes. |
+| `Last Silly` | The bot saves when it last said "Silly [name]" here (the silly trigger's cooldown). |
+| `Last Good Job` | The bot saves when it last said "Good job [name]" here (the good job trigger's cooldown). |
+
+The bot fills in the two `Last ...` columns itself. Do not type in them. Each trigger has its own column, so they
+never affect each other's cooldown, and each name has its own cooldown within each trigger. Both cooldowns are
+20 minutes (change `COOLDOWN_MINUTES` in `triggers/sillystaff.js` and `triggers/goodjob.js`).
+
+To add another "[phrase] [name]" trigger, copy `triggers/goodjob.js`, change the phrase and reply, and add a new
+`Last ...` column to the sheet for it.
 
 ### Feature suggestions
 
