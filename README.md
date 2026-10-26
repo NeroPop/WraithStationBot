@@ -107,6 +107,12 @@ the bot reacts to that message with ❤️ and 🤖. An @mention of Wraith works
 To change the reactions or the ways of saying it, edit the settings at the top of that file.
 It needs the **Add Reactions** permission.
 
+### Thanking the bot
+
+When someone says "thanks bot", "thank you jester", "ty jesterstation" and similar (`triggers/thanksbot.js`), the bot
+replies "You're welcome @user", mentioning the person who said thanks. An @mention of the bot works too (the bot's user
+ID is in that file). To change the answer or the names it responds to, edit the settings at the top of that file.
+
 ### Sponsor shout-out
 
 `/sponsor` posts an embed saying "JesterStation Was brought to you by: SteveStreamsUK !!" with Steve's icon
