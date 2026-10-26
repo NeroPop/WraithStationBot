@@ -85,10 +85,21 @@ The bot randomly says short phrases ("stims") in small text, but only in channel
 
 ### Tea alarm
 
-`/tea set time:15:30` (or `time:20m`) pings one person (set in `config.js`) in that channel at that time, with a
+`/tea set time:saturday 7:20pm` pings one person (set in `config.js`) in that channel at that time, with a
 "Tea Alarm!" embed and a random picture from `images/tea/`.
 
-- Clock times are read in UK time (`teaAlarm.timezone` in `config.js`). Waits use `m`, `h` or `d`.
+The `time` box understands several ways of saying when (capital letters, commas and little words like "on", "at" and
+"next" do not matter):
+
+| You type | Meaning |
+|---|---|
+| `saturday 7:20pm`, `7:20pm on saturday`, `sat 19:20` | That time on the next Saturday. If it is Saturday and that time has gone by, it means next week. |
+| `tomorrow 9am`, `today 6pm`, `tonight 9pm` | That time tomorrow or today. (`today` with a time that has gone by is refused.) |
+| `7:20pm`, `19:20`, `9am`, `noon`, `midnight` | The next time the clock reads that. Without am or pm it is the 24 hour clock. |
+| `20m`, `1h 30m`, `5d 5h 13m` | That long from now (`m`, `h` or `d`). |
+
+- Clock times and days are read in UK time (`teaAlarm.timezone` in `config.js`), including when the clocks change.
+  After you set an alarm, the bot shows the full day and date it understood, so you can check it.
 - Only people with a role listed in `teaAlarm.allowedRoleIds` can use it (and the people in `alwaysAllowedUserIds`).
   To allow another role, add its ID to that list.
 - Only one alarm can be set per hour, shared by everyone (`teaAlarm.cooldown`). Cancelling a waiting alarm resets

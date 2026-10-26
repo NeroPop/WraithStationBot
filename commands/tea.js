@@ -3,8 +3,11 @@
 // The /tea command. It sets an alarm that pings a person (chosen in config.js) in the
 // channel where you set it, with a "Tea Alarm!" message and a random tea picture.
 //
-//   /tea set time:15:30    alarm at the next 15:30 (UK time)
-//   /tea set time:20m      alarm in 20 minutes
+//   /tea set time:15:30             alarm at the next 15:30 (UK time)
+//   /tea set time:7:20pm            the same idea, with am/pm
+//   /tea set time:saturday 7:20pm   alarm at 7:20pm on the next Saturday (also "7:20pm on saturday")
+//   /tea set time:tomorrow 9am      alarm at 9am tomorrow
+//   /tea set time:20m               alarm in 20 minutes (also "1h 30m" or "5d 5h 13m")
 //   /tea cancel            cancel the waiting alarms in this channel
 //   /tea status            show the waiting alarms in this channel, and when the next may be set
 //
@@ -21,22 +24,25 @@ const { settings } = tea;
 // A correct example, shown whenever someone gets the time wrong.
 const HOW_TO = [
   '**How to set the time**',
-  `• A clock time on the 24 hour clock, in ${settings.timezone} time. Examples: \`15:30\`, \`9\`, \`21:05\`. This means the next time the clock reads that.`,
-  '• Or a wait, using **m** (minutes), **h** (hours) or **d** (days). Examples: `20m`, `1h 30m`, `2d`.',
+  `• A day and a time, in ${settings.timezone} time. Examples: \`saturday 7:20pm\`, \`7:20pm on saturday\`, \`sat 19:20\`, \`tomorrow 9am\`, \`today 6pm\`. A day name means the next time that day comes round.`,
+  '• Or just a time, which means the next time the clock reads that. Examples: `7:20pm`, `19:20`, `9am`, `noon`. Without am or pm it is the 24 hour clock.',
+  '• Or a wait, using **m** (minutes), **h** (hours) or **d** (days). Examples: `20m`, `1h 30m`, `5d 5h 13m`.',
   `• It can be at most ${formatDuration(settings.maxAheadMs)} ahead.`,
-  'Full example: `/tea set time:15:30`',
+  'Full examples: `/tea set time:saturday 7:20pm` or `/tea set time:15:30`',
 ].join('\n');
 
 // A Discord timestamp. Each person sees it in their OWN time zone and language.
-//   style "t" shows just the time (15:30), "f" shows the date and time, "R" shows "in 20 minutes".
+//   style "t" shows just the time (15:30), "F" shows the day, date and time (Saturday, 7 November
+//   2026 at 19:20), "R" shows "in 20 minutes".
 function stamp(ms, style) {
   return `<t:${Math.floor(ms / 1000)}:${style}>`;
 }
 
 // Shows an alarm's time using Discord's timestamp, so each reader sees it in their own time zone.
-// For an alarm that is soon, the time is enough. For one further away, the date is shown too.
+// For an alarm that is soon, the time is enough. For one further away, the day and date are shown
+// too, so everyone can see exactly which day it is (important for "saturday 7:20pm").
 function alarmTime(alarmMs, now = Date.now()) {
-  return alarmMs - now < 20 * 60 * 60 * 1000 ? stamp(alarmMs, 't') : stamp(alarmMs, 'f');
+  return alarmMs - now < 20 * 60 * 60 * 1000 ? stamp(alarmMs, 't') : stamp(alarmMs, 'F');
 }
 
 // The IDs of the roles the person has. Discord gives these in two possible shapes.
@@ -73,7 +79,7 @@ module.exports = {
         .addStringOption((option) =>
           option
             .setName('time')
-            .setDescription('A clock time like 15:30 (UK time) or a wait like 20m or 1h 30m.')
+            .setDescription('When: saturday 7:20pm, tomorrow 9am, 15:30 or 7:20pm (UK time), or a wait like 20m.')
             .setRequired(true)
         )
     )
@@ -104,6 +110,10 @@ module.exports = {
 
       if (parsed.error === 'format') {
         await privately(interaction, `"${text}" is not a time I understand.\n\n${HOW_TO}`);
+        return;
+      }
+      if (parsed.error === 'past') {
+        await privately(interaction, `That time has already passed today. Try \`tomorrow\` or a day name, like \`saturday 7:20pm\`.\n\n${HOW_TO}`);
         return;
       }
       if (parsed.error === 'tooSoon') {
@@ -152,7 +162,11 @@ module.exports = {
         permissions?.has(PermissionFlagsBits.AttachFiles) === false
           ? '\nNote: I am missing the **Attach Files** permission here, so the alarm will go out without a picture.'
           : '';
-      await privately(interaction, `Done! Your tea alarm is set. Use \`/tea cancel\` if you change your mind.${pictureNote}`);
+      // The full day and date is shown here so you can check the bot understood you correctly.
+      await privately(
+        interaction,
+        `Done! Your tea alarm is set for ${stamp(alarm.alarmMs, 'F')}. Use \`/tea cancel\` if that is wrong or you change your mind.${pictureNote}`
+      );
       return;
     }
 

@@ -123,6 +123,61 @@ function localMinutes(ms, timeZone) {
   return hours * 60 + minutes;
 }
 
+// ---- Calendar days -------------------------------------------------------
+
+// The short names Intl uses for the days of the week, in order (index 0 is Sunday).
+const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+// What is the calendar date in a time zone at a given moment? Returns
+//   { year, month, day, weekday }   where month is 1 to 12 and weekday is 0 (Sunday) to 6 (Saturday).
+// (The date depends on the time zone: 00:30 on Saturday in London is still Friday in New York.)
+function zonedDateParts(ms, timeZone) {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    weekday: 'short',
+  }).formatToParts(new Date(ms));
+
+  const get = (type) => parts.find((part) => part.type === type).value;
+  return {
+    year: Number(get('year')),
+    month: Number(get('month')),
+    day: Number(get('day')),
+    weekday: WEEKDAY_NAMES.indexOf(get('weekday')),
+  };
+}
+
+// The date that is "days" days after the given date. Months and years roll over properly,
+// so adding 3 days to 30 October gives 2 November.
+function addDays({ year, month, day }, days) {
+  const moved = new Date(Date.UTC(year, month - 1, day + days));
+  return { year: moved.getUTCFullYear(), month: moved.getUTCMonth() + 1, day: moved.getUTCDate() };
+}
+
+// The exact moment when the clock in a time zone reads a given time on a given date.
+//   zonedInstant(2026, 11, 7, 19 * 60 + 20, 'Europe/London')   is 7:20pm on 7 November 2026 in London
+// "minutesOfDay" is minutes since midnight (7:20pm is 1160).
+function zonedInstant(year, month, day, minutesOfDay, timeZone) {
+  const wantedDay = Date.UTC(year, month - 1, day) / DAY; // the date we want, as a day number
+
+  // Start by pretending the wanted clock time is in UTC, then correct by how far off that is.
+  // We check the answer and nudge it a few times, which also copes with the clocks changing
+  // for summer or winter time (the answer can be an hour out on the first try).
+  let guess = Date.UTC(year, month - 1, day) + minutesOfDay * MINUTE;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const actual = zonedDateParts(guess, timeZone);
+    const actualDay = Date.UTC(actual.year, actual.month - 1, actual.day) / DAY;
+    const difference = (wantedDay - actualDay) * 1440 + (minutesOfDay - localMinutes(guess, timeZone));
+    if (difference === 0) break;
+    guess += difference * MINUTE;
+  }
+
+  return guess;
+}
+
 // ---- Active hours --------------------------------------------------------
 // "Active hours" are a daily window, such as 10:00 to 22:00. The start is included and
 // the end is not. A window can cross midnight (22:00 to 02:00). If the start and end are
@@ -175,6 +230,9 @@ module.exports = {
   formatTimeOfDay,
   resolveTimeZone,
   localMinutes,
+  zonedDateParts,
+  addDays,
+  zonedInstant,
   isWithinActive,
   windowMinutes,
   nextOpening,

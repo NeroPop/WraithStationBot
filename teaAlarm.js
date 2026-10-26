@@ -22,7 +22,8 @@ const path = require('node:path');
 const { EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const { getSheet, ensureHeadings, appendRow } = require('./sheets');
 const { sheetIds, teaAlarm: teaConfig } = require('./config');
-const { MINUTE, parseDuration, parseTimeOfDay, resolveTimeZone, nextOpening } = require('./timeUtils');
+const { MINUTE, HOUR, parseDuration, resolveTimeZone } = require('./timeUtils');
+const { parseWhen } = require('./parseWhen');
 const { pickRandom, randomInt } = require('./random');
 const { createQueue } = require('./taskQueue');
 
@@ -111,17 +112,27 @@ function canUse(userId, roleIds) {
 // ---- Reading what time was asked for -------------------------------------
 
 // Turns what someone typed into the moment the alarm should go off.
-//   "15:30" or "15"  -> the next time the clock reads that, in the configured time zone
-//   "20m", "1h 30m"  -> that long from now
-// Returns { atMs } when it worked, or { error } with one of: 'format', 'tooSoon', 'tooFar'.
+//   "15:30", "7:20pm", "9am"        -> the next time the clock reads that, in the configured time zone
+//   "saturday 7:20pm", "tomorrow 9am"  -> that time on that day (see parseWhen.js for everything it reads)
+//   "20m", "1h 30m", "5d 5h 13m"    -> that long from now
+// Returns { atMs } when it worked, or { error } with one of: 'format', 'tooSoon', 'tooFar', 'past'.
 function parseAlarmTime(text, now = Date.now()) {
   const input = String(text ?? '').trim();
 
-  const clockTime = parseTimeOfDay(input);
   let atMs;
+  let allowance = 0; // a little extra room on the "how far ahead" limit (see below)
 
-  if (clockTime !== null) {
-    atMs = nextOpening(now, clockTime, SETTINGS.timezone); // the next time the clock reads that
+  // First try a clock time or a day and time. If it is neither, try a wait.
+  const when = parseWhen(input, now, SETTINGS.timezone);
+
+  if (when) {
+    if (when.error) return { error: when.error };
+    atMs = when.atMs;
+
+    // "Monday 2pm" said on a Monday afternoon means NEXT Monday. In the week the clocks change
+    // that is 7 days plus an hour away, which would just miss a 7 day limit. A day name should
+    // never fail for that reason, so day names and clock times get 2 hours of extra room.
+    allowance = 2 * HOUR;
   } else {
     const wait = parseDuration(input);
     if (wait === null) return { error: 'format' };
@@ -129,7 +140,7 @@ function parseAlarmTime(text, now = Date.now()) {
     atMs = now + wait;
   }
 
-  if (atMs - now > SETTINGS.maxAheadMs) return { error: 'tooFar' };
+  if (atMs - now > SETTINGS.maxAheadMs + allowance) return { error: 'tooFar' };
   return { atMs };
 }
 
