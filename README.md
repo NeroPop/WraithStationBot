@@ -102,8 +102,9 @@ The bot randomly says short phrases ("stims") in small text, but only in channel
 
 ### Love for Wraith
 
-When someone says "ily wraith", "I love you wraith" and similar (`triggers/lovewraith.js`), the bot reacts to that
-message with ❤️ and 🤖. To change the reactions or the ways of saying it, edit the settings at the top of that file.
+When someone says "ily wraith", "I love you wraith", "I love WraithStation" and similar (`triggers/lovewraith.js`),
+the bot reacts to that message with ❤️ and 🤖. An @mention of Wraith works too (Wraith's user ID is in that file).
+To change the reactions or the ways of saying it, edit the settings at the top of that file.
 It needs the **Add Reactions** permission.
 
 ### Sponsor shout-out
