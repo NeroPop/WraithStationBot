@@ -100,6 +100,12 @@ The bot randomly says short phrases ("stims") in small text, but only in channel
 - Alarms are saved in the `TeaAlarm` tab (the bot writes the headings itself), so a restart loses nothing.
 - Pictures need the **Attach Files** permission. Without it, the alarm is sent without a picture.
 
+### Love for Wraith
+
+When someone says "ily wraith", "I love you wraith" and similar (`triggers/lovewraith.js`), the bot reacts to that
+message with ❤️ and 🤖. To change the reactions or the ways of saying it, edit the settings at the top of that file.
+It needs the **Add Reactions** permission.
+
 ### Sponsor shout-out
 
 `/sponsor` posts an embed saying "JesterStation Was brought to you by: SteveStreamsUK !!" with Steve's icon
