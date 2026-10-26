@@ -4,9 +4,13 @@
 //
 //     JesterStation Was brought to you by: SteveStreamsUK !!
 //
-// with Steve's icon underneath. Everyone in the channel can see it.
+// with Steve's icon underneath, and a small footer at the bottom of the embed:
 //
-// To change the wording, the picture or the colour, change the three settings below.
+//     With everything actually being made by Nero.
+//
+// Everyone in the channel can see it.
+//
+// To change the wording, the footer, the picture or the colour, change the settings below.
 //
 // The picture is sent as an attachment, which needs the "Attach Files" permission.
 // If the bot does not have it, the shout-out is still posted, just without the picture.
@@ -17,6 +21,7 @@ const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discor
 
 // ---- Settings you might want to change -----------------------------------
 const TEXT = 'JesterStation Was brought to you by: SteveStreamsUK !!'; // the words in the embed
+const FOOTER = 'With everything actually being made by Nero.'; // the small text at the bottom of the embed
 const IMAGE_PATH = path.join(__dirname, '..', 'images', 'steve', 'steve_icon.png'); // the picture
 const COLOR = 0xe2ffcf; // the stripe down the side of the embed
 
@@ -25,7 +30,9 @@ const MISSING_PERMISSIONS = 50013;
 
 // Builds the message to post. Pass false to leave the picture out.
 function buildMessage(withImage) {
-  const embed = new EmbedBuilder().setColor(COLOR).setTitle(TEXT);
+  // The footer belongs on the embed (the card the bot posts), not on the command definition.
+  // setFooter() takes an object with the words in "text".
+  const embed = new EmbedBuilder().setColor(COLOR).setTitle(TEXT).setFooter({ text: FOOTER });
   const message = { embeds: [embed] };
 
   if (withImage) {
