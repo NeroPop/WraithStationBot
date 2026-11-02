@@ -23,7 +23,7 @@ module.exports = {
     sheetTab: 'Stims', // the name of the tab that holds the channel settings
 
     // Each session picks one stim and says it this many times (a random number from min to max).
-    repeatsPerSession: { min: 1, max: 8 },
+    repeatsPerSession: { min: 1, max: 6 },
 
     // The wait between repeats inside one session (a random time from min to max).
     // For a channel whose /stim "max" is shorter than this max, that channel's max is used
